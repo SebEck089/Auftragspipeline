@@ -417,6 +417,11 @@ def bauen(dateien, heute):
                          "x": "Es sind keine Bestandsveränderungen gebucht (Konten 8960 bis 8989 und 3960 bis 3999). Die BWA zeigt deshalb "
                               "den Material- und Wareneinkauf des Monats und nicht den Materialverbrauch. Unfertige und fertige "
                               "Erzeugnisse sind nicht bewertet. Der Rohertrag eines einzelnen Monats ist dadurch nur eingeschränkt aussagefähig."})
+    if abs(jahr_p.get("steuern", 0)) < 0.005:
+        struktur.append({"k": "steuern", "t": "Steuern vom Einkommen und Ertrag",
+                         "x": "Im Wirtschaftsjahr %d ist weder Körperschaftsteuer noch Gewerbesteuer gebucht (Konten 2200 bis 2299 und "
+                              "4320). Das vorläufige Ergebnis ist deshalb ein Ergebnis vor Ertragsteuern. Die Steuern mindern das "
+                              "Ergebnis, sobald Vorauszahlungen oder eine Steuerrückstellung gebucht werden." % jahr})
     vk = [v for v in verr.values() if abs(v["saldo"]) > 0.005]
     vk.sort(key=lambda v: -abs(v["saldo"]))
 
