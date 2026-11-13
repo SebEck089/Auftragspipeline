@@ -108,25 +108,25 @@ tr:last-child > td { border-bottom: none; }
 [data-tip] { cursor: help; }
 th[data-tip] .u, td[data-tip] .u { text-decoration: underline dotted; text-underline-offset: 3px; }
 
-#bwa td:first-child { white-space: normal; overflow-wrap: anywhere; min-width: 190px; }
-#bwa tr.pos > td { font-size: 13.5px; }
-#bwa tr.pos > td:first-child { font-weight: 600; }
-#bwa tr.klick { cursor: pointer; }
-#bwa tr.klick:hover > td { background: var(--surface-2); }
-#bwa tr.pos.klick > td:first-child::before, #bwa tr.kto.klick > td:first-child::before { content: "▸"; display: inline-block; width: 14px; color: var(--ink-3); font-size: 11px; }
-#bwa tr.pos.open > td:first-child::before, #bwa tr.kto.open > td:first-child::before { content: "▾"; }
-#bwa tr.pos.leer > td:first-child { padding-left: 26px; font-weight: 500; color: var(--ink-2); }
-#bwa tr.kto > td { font-size: 12.5px; color: var(--ink-2); }
-#bwa tr.kto > td:first-child { padding-left: 30px; }
-#bwa tr.kto.leer > td:first-child { padding-left: 44px; }
-#bwa tr.sum > td { font-weight: 600; font-size: 14px; background: var(--surface-2); border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); }
-#bwa tr.sum.end > td { font-size: 15px; background: var(--accent-soft); }
-#bwa .pz { display: block; font-size: 11px; font-weight: 400; color: var(--ink-3); }
-#bwa td.cur, #bwa th.cur { box-shadow: inset 2px 0 0 var(--accent); }
-#bwa th[data-m] { cursor: pointer; }
-#bwa tr.memo > td { font-weight: 600; font-size: 14px; border-top: 3px double var(--line-2); padding-top: 12px; }
-#bwa tr.kopf > td { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); padding-top: 14px; }
-#bwa tr.bu > td { padding: 0 0 0 30px; background: var(--ground); }
+table.bw td:first-child { white-space: normal; overflow-wrap: anywhere; min-width: 190px; }
+table.bw tr.pos > td { font-size: 13.5px; }
+table.bw tr.pos > td:first-child { font-weight: 600; }
+table.bw tr.klick { cursor: pointer; }
+table.bw tr.klick:hover > td { background: var(--surface-2); }
+table.bw tr.pos.klick > td:first-child::before, table.bw tr.kto.klick > td:first-child::before { content: "▸"; display: inline-block; width: 14px; color: var(--ink-3); font-size: 11px; }
+table.bw tr.pos.open > td:first-child::before, table.bw tr.kto.open > td:first-child::before { content: "▾"; }
+table.bw tr.pos.leer > td:first-child { padding-left: 26px; font-weight: 500; color: var(--ink-2); }
+table.bw tr.kto > td { font-size: 12.5px; color: var(--ink-2); }
+table.bw tr.kto > td:first-child { padding-left: 30px; }
+table.bw tr.kto.leer > td:first-child { padding-left: 44px; }
+table.bw tr.sum > td { font-weight: 600; font-size: 14px; background: var(--surface-2); border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); }
+table.bw tr.sum.end > td { font-size: 15px; background: var(--accent-soft); }
+table.bw .pz { display: block; font-size: 11px; font-weight: 400; color: var(--ink-3); }
+table.bw td.cur, table.bw th.cur { box-shadow: inset 2px 0 0 var(--accent); }
+table.bw th[data-m] { cursor: pointer; }
+table.bw tr.memo > td { font-weight: 600; font-size: 14px; border-top: 3px double var(--line-2); padding-top: 12px; }
+table.bw tr.kopf > td { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); padding-top: 14px; }
+table.bw tr.bu > td { padding: 0 0 0 30px; background: var(--ground); }
 .pb { display: block; height: 3px; margin-top: 3px; background: var(--line); border-radius: 2px; overflow: hidden; min-width: 60px; }
 .pb i { display: block; height: 100%; background: var(--bar); border-radius: 2px; }
 .mk { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; margin-left: 6px; padding: 0 4px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); font-size: 10.5px; font-weight: 700; line-height: 1; vertical-align: 1px; }
@@ -163,21 +163,23 @@ tr.vb > td { padding: 0 0 0 20px; background: var(--ground); }
 @media (max-width: 640px) {
   .wrap { padding: 14px 16px 40px; }
   th, td { padding-left: 8px; padding-right: 8px; }
-  #bwa td:first-child { min-width: 150px; }
-  #bwa tr.bu > td { padding-left: 8px; }
-  #bwa tr.kto > td:first-child { padding-left: 16px; }
+  table.bw td:first-child { min-width: 150px; }
+  table.bw tr.bu > td { padding-left: 8px; }
+  table.bw tr.kto > td:first-child { padding-left: 16px; }
   .head .stand { text-align: left; }
   .bt { min-width: 540px; }
 }
 @media (max-width: 560px) {
-  #bwa .pc { display: none; }
-  #bwa td, #bwa th { padding-left: 7px; padding-right: 7px; }
-  #bwa tr.pos > td, #bwa tr.sum > td, #bwa tr.sum.end > td { font-size: 12.5px; }
-  #bwa tr.kto > td { font-size: 11.5px; }
-  #bwa td:first-child { min-width: 120px; }
+  table.bw .pc { display: none; }
+  table.bw td, table.bw th { padding-left: 7px; padding-right: 7px; }
+  table.bw tr.pos > td, table.bw tr.sum > td, table.bw tr.sum.end > td { font-size: 12.5px; }
+  table.bw tr.kto > td { font-size: 11.5px; }
+  table.bw td:first-child { min-width: 120px; }
   .nurbreit { display: none; }
 }
 @media (min-width: 561px) { .nurschmal { display: none; } }
+table.bw tr.sum.hl > td { background: var(--accent-soft); }
+.annahmen { margin-top: 16px; }
 </style>
 <div class="wrap">
   <div class="head">
@@ -209,7 +211,7 @@ tr.vb > td { padding: 0 0 0 20px; background: var(--ground); }
       <div class="ctl"><span>Suche</span><input type="search" id="q" placeholder="Beleg-Nr., Konto, Name, Text oder Betrag" autocomplete="off"></div>
     </div>
     <nav class="nav" id="nav">
-      <a href="#bwa" data-t="bwa">BWA</a><a href="#vollstaendigkeit" data-t="vollstaendigkeit">Vollständigkeit</a>
+      <a href="#bwa" data-t="bwa">BWA</a><a href="#db" data-t="db">Deckungsbeitrag</a><a href="#guv" data-t="guv">GuV Umsatzkostenverfahren</a><a href="#vollstaendigkeit" data-t="vollstaendigkeit">Vollständigkeit</a>
     </nav>
 
     <section class="pane" id="p-bwa">
@@ -217,7 +219,25 @@ tr.vb > td { padding: 0 0 0 20px; background: var(--ground); }
         <div class="ctl"><button class="link" id="allauf" type="button">alle Konten zeigen</button><button class="link" id="allzu" type="button">alle schließen</button></div></div>
       <p class="intro">Aufbau wie die DATEV-BWA (Form 01, Kontenrahmen SKR03). Beträge in €, netto ohne Umsatzsteuer. Zeile anklicken zeigt die Konten, Konto anklicken zeigt die einzelnen Buchungen. Unter den Zwischensummen und den großen Positionen steht der Anteil an der Gesamtleistung des Monats in Prozent. Der markierte Monat gilt für die Buchungen und die Vollständigkeit, ein Klick auf den Spaltenkopf wählt ihn.</p>
       <div id="bstatus"></div>
-      <div class="tw"><table id="bwa"></table></div>
+      <div class="tw"><table id="bwa" class="bw"></table></div>
+    </section>
+
+    <section class="pane" id="p-db" hidden>
+      <div class="pane-head"><h2 id="t-db"></h2>
+        <div class="ctl"><button class="link" type="button" data-auf="db">alle Konten zeigen</button><button class="link" type="button" data-zu="db">alle schließen</button></div></div>
+      <p class="intro" id="i-db"></p>
+      <div id="st-db"></div>
+      <div class="tw"><table id="tab-db" class="bw"></table></div>
+      <div class="annahmen" id="an-db"></div>
+    </section>
+
+    <section class="pane" id="p-guv" hidden>
+      <div class="pane-head"><h2 id="t-guv"></h2>
+        <div class="ctl"><button class="link" type="button" data-auf="guv">alle Konten zeigen</button><button class="link" type="button" data-zu="guv">alle schließen</button></div></div>
+      <p class="intro" id="i-guv"></p>
+      <div id="st-guv"></div>
+      <div class="tw"><table id="tab-guv" class="bw"></table></div>
+      <div class="annahmen" id="an-guv"></div>
     </section>
 
     <section class="pane" id="p-suche" hidden>
@@ -360,7 +380,7 @@ const PLAIN = __PLAIN__;
         "<td class='num'>" + (b[4] ? fmt0(b[4]) : "") + "</td><td class='num'>" + (b[5] ? fmt0(b[5]) : "") + "</td></tr>";
     });
     const saldo = k ? (soll - haben) * sgn(k.z) : soll - haben;
-    const zeit = kum ? (state.tab === "bwa" ? kumName() : "Wirtschaftsjahr " + J) : mName(ms[0]);
+    const zeit = kum ? (state.tab !== "vollstaendigkeit" ? kumName() : "Wirtschaftsjahr " + J) : mName(ms[0]);
     return '<div class="bbox"><div class="bhead"><span><b>Konto ' + nr + " " + esc(k ? k.n : D.namen[nr] || "") + "</b> · " + esc(zeit) + " · " + all.length + (all.length === 1 ? " Buchung" : " Buchungen") + "</span>" +
       (cols ? '<button class="link" type="button" data-kum="' + nr + '">' + (kum ? "nur " + esc(mName(state.m)) + " zeigen" : "alle Buchungen " + esc(kumName()) + " zeigen") + "</button>" : "") + "</div>" +
       '<table class="bt"><thead><tr><th class="tl">Belegdatum</th><th class="tl">Beleg-Nr.</th><th class="tl">Buchungstext</th><th class="tl">Gegenkonto</th><th class="num">Soll €</th><th class="num">Haben €</th></tr></thead><tbody>' +
@@ -410,6 +430,60 @@ const PLAIN = __PLAIN__;
     else if (pr.pos.length) st = '<div class="note warn"><b>' + esc(mName(state.m)) + (pr.laeuft ? " läuft (Tag " + pr.tag + " von " + pr.tage + ")" : "") + ", wahrscheinlich unvollständig:</b> " + pr.pos.length + (pr.pos.length === 1 ? " regelmäßig gebuchtes Konto ist" : " regelmäßig gebuchte Konten sind") + " noch nicht oder nur teilweise gebucht. Betroffen: " + esc(zeilen.join(", ")) + '. Die Zeilen sind mit <span class="mk">!</span> markiert, Beträge und Herleitung stehen im Reiter <a href="#vollstaendigkeit">Vollständigkeit</a>.</div>';
     else st = '<div class="note ok"><b>' + esc(mName(state.m)) + (pr.laeuft ? " läuft (Tag " + pr.tag + " von " + pr.tage + ")" : "") + ":</b> Bei den regelmäßig gebuchten Konten fällt nichts auf. Positionen, die im ganzen Jahr fehlen, stehen im Reiter <a href=\"#vollstaendigkeit\">Vollständigkeit</a>.</div>";
     $("#bstatus").innerHTML = st;
+  }
+
+  // ---------- Deckungsbeitragsrechnung und GuV nach dem Umsatzkostenverfahren ----------
+  const fak = (art, m) => (art === "lohn" ? (D.lohnanteil[m] || 0) : art === "gehalt" ? 1 - (D.lohnanteil[m] || 0) : 1);
+  const sval = (V, k, z, m) => (k.s[m] || 0) * (V.pos[z[0]].art === "e" ? -1 : 1) * fak(z[1], m);
+  function sichtWerte(V, m) {
+    const p = {}, s = {};
+    Object.keys(V.pos).forEach((k) => { p[k] = 0; });
+    D.konten.forEach((k) => { (V.zu[k.nr] || []).forEach((z) => { p[z[0]] += sval(V, k, z, m); }); });
+    V.aufbau.forEach((a) => { if (a[0] === "sum") s[a[1]] = a[4].reduce((x, t) => x + t[0] * (t[1] in p ? p[t[1]] : s[t[1]]), 0); });
+    return { p, s };
+  }
+  function renderSicht(V) {
+    const MS = D.meta.monate, ms = [state.m], kms = kumM(), ncol = MS.length + 1;
+    const W = MS.map((m) => sichtWerte(V, m));
+    const basis = (w) => (V.basis[0] === "s" ? w.s[V.basis[1]] : w.p[V.basis[1]]);
+    const pc = (v, g) => (Math.abs(g) < 0.005 || Math.abs(v / g) < 0.00005 ? "" : nf2.format(v / g * 100));
+    const zeit = MS.length > 1 ? MON[MS[0] - 1] + " bis " + MON[MS[MS.length - 1] - 1] + " " + J : mName(state.m);
+    $("#t-" + V.k).textContent = V.n + " " + zeit;
+    $("#i-" + V.k).textContent = "Dieselben Konten und Buchungen wie in der BWA, anders geordnet. Beträge in €, netto ohne Umsatzsteuer. Unter den Zwischensummen und den großen Positionen steht der Anteil " + V.basis_text + " des Monats in Prozent. Zeile anklicken zeigt die Konten, Konto anklicken zeigt die Buchungen.";
+    const cells = (f, pct) => MS.map((m, i) => {
+      const v = f(W[i], m), q = pct ? pc(v, basis(W[i])) : "";
+      return '<td class="num' + (v < -0.005 ? " neg" : "") + (m === state.m ? " cur" : "") + '">' + fmt(v) + (q ? '<span class="pz">' + q + " %</span>" : "") + "</td>";
+    }).join("");
+    const inZeile = {};
+    D.konten.forEach((k) => { if (!(D.buch[k.nr] || []).length && !Object.keys(k.s).length) return; (V.zu[k.nr] || []).forEach((z) => { (inZeile[z[0]] = inZeile[z[0]] || []).push([k, z]); }); });
+    let h = "<thead><tr><th>Bezeichnung</th>" + MS.map((m) => '<th class="num' + (m === state.m ? " cur" : "") + '" data-m="' + m + '"' + tipA("<b>" + esc(mName(m)) + "</b>Buchungsperiode " + esc(mName(m)) + " laut DATEV." + '<span class="q">Anklicken wählt den Monat für die Buchungen.</span>') + '><span class="u">' + esc(MK[m - 1] + " " + J) + "</span></th>").join("") + "</tr></thead><tbody>";
+    V.aufbau.forEach((a) => {
+      if (a[0] === "kopf") { h += '<tr class="kopf"><td colspan="' + ncol + '">' + esc(a[1]) + "</td></tr>"; return; }
+      if (a[0] === "sum") {
+        h += '<tr class="sum' + (a[5] ? " " + a[5] : "") + '"><td' + tipA("<b>" + esc(a[2]) + "</b>" + esc(a[3]) + ".") + '><span class="u">' + esc(a[2]) + "</span></td>" + cells((w) => w.s[a[1]], !(V.basis[0] === "s" && V.basis[1] === a[1])) + "</tr>";
+        return;
+      }
+      const x = V.pos[a[1]], ks = inZeile[a[1]] || [], zk = V.k + ":" + a[1];
+      if (!ks.length && !x.immer) return;
+      const open = ks.length > 0 && state.open.has(zk);
+      h += '<tr class="pos' + (ks.length ? " klick" : " leer") + (open ? " open" : "") + '"' + (ks.length ? ' data-z="' + zk + '" tabindex="0"' : "") + "><td><span" +
+        tipA("<b>" + esc(x.n) + "</b>" + (x.art === "e" ? "Ertragszeile: Haben minus Soll der zugeordneten Konten." : "Kostenzeile: Soll minus Haben der zugeordneten Konten.") + (ks.length ? '<span class="q">Konten: ' + ks.map((e) => e[0].nr).join(", ") + ".</span>" : '<span class="q">Im Wirtschaftsjahr nicht gebucht.</span>')) + ">" + esc(x.n) + "</span></td>" +
+        (ks.length ? cells((w) => w.p[a[1]], x.pct) : MS.map((m) => '<td class="num dim' + (m === state.m ? " cur" : "") + '">–</td>').join("")) + "</tr>";
+      if (!open) return;
+      ks.forEach((e) => {
+        const k = e[0], z = e[1], ko = state.kopen.has(k.nr);
+        h += '<tr class="kto klick' + (ko ? " open" : "") + '" data-k="' + k.nr + '" tabindex="0"><td>' + k.nr + " " + esc(k.n) +
+          (z[1] !== "voll" ? '<span class="chip"' + tipA("Dieses Konto ist in der Buchführung nicht nach Löhnen und Gehältern getrennt. Es wird je Monat im Verhältnis der Löhne zu den Gehältern geteilt. Anteil dieser Zeile im " + esc(mName(state.m)) + ": " + nf2.format(fak(z[1], state.m) * 100) + " %.") + ">anteilig" + (Math.abs(k.s[state.m] || 0) > 0.005 ? " " + nf2.format(fak(z[1], state.m) * 100) + " %" : "") + "</span>" : "") +
+          (z[2] !== "belegt" ? '<span class="chip w"' + tipA("Dieses Konto ist neu und noch nicht einzeln zugeordnet. Die Zeile ist aus der BWA-Zeile des Kontos abgeleitet.") + ">Zuordnung nicht geprüft</span>" : "") +
+          "</td>" + cells((w, m) => sval(V, k, z, m), false) + "</tr>";
+        if (ko) { const kum = state.kum.has(k.nr); h += '<tr class="bu"><td colspan="' + ncol + '">' + buchungen(k.nr, kum ? kms : ms, kum, true) + "</td></tr>"; }
+      });
+    });
+    $("#tab-" + V.k).innerHTML = h + "</tbody>";
+    const abw = MS.filter((m, i) => Math.abs(W[i].s.ergebnis - werte([m]).s.ergebnis) > 0.005);
+    $("#st-" + V.k).innerHTML = abw.length ? '<div class="note warn"><b>Kontrolle:</b> Das Ergebnis weicht vom vorläufigen Ergebnis der BWA ab (' + abw.map((m) => MK[m - 1]).join(", ") + ").</div>"
+      : '<div class="note ok"><b>Kontrolle:</b> Jedes Erfolgskonto ist genau einer Zeile zugeordnet. Das vorläufige Ergebnis stimmt in jedem Monat mit der BWA überein.</div>';
+    $("#an-" + V.k).innerHTML = '<div class="note"><b>Zuordnung der Konten und Annahmen</b><ul>' + V.annahmen.map((t) => "<li>" + esc(t) + "</li>").join("") + "</ul></div>";
   }
 
   // ---------- Vollständigkeit ----------
@@ -519,20 +593,22 @@ const PLAIN = __PLAIN__;
     if (el) el.scrollIntoView({ block: "start" });
   }
 
+  const TABS = ["bwa", "db", "guv", "vollstaendigkeit"];
   function render() {
     const such = state.q.length >= 2;
     $("#p-suche").hidden = !such;
     if (such) {
       document.querySelectorAll("#nav a").forEach((a) => a.classList.remove("on"));
-      $("#p-bwa").hidden = true; $("#p-vollstaendigkeit").hidden = true;
+      TABS.forEach((t) => { $("#p-" + t).hidden = true; });
       renderSuche(); return;
     }
     document.querySelectorAll("#mseg button").forEach((b) => b.classList.toggle("on", +b.dataset.m === state.m));
     document.querySelectorAll("#nav a").forEach((a) => a.classList.toggle("on", a.dataset.t === state.tab));
-    $("#p-bwa").hidden = state.tab !== "bwa"; $("#p-vollstaendigkeit").hidden = state.tab !== "vollstaendigkeit";
-    if (state.tab === "bwa") renderBwa(); else renderVoll();
+    TABS.forEach((t) => { $("#p-" + t).hidden = state.tab !== t; });
+    const V = (D.sichten || []).find((x) => x.k === state.tab);
+    if (V) renderSicht(V); else if (state.tab === "bwa") renderBwa(); else renderVoll();
   }
-  function showTab() { const t = (location.hash || "#bwa").slice(1); state.tab = t === "vollstaendigkeit" ? t : "bwa"; render(); }
+  function showTab() { const t = (location.hash || "#bwa").slice(1); state.tab = TABS.indexOf(t) >= 0 && (t === "bwa" || t === "vollstaendigkeit" || (D.sichten || []).some((x) => x.k === t)) ? t : "bwa"; render(); }
 
   function openApp() {
     J = D.meta.jahr;
@@ -541,6 +617,7 @@ const PLAIN = __PLAIN__;
     const ms = D.meta.monate; state.m = ms[ms.length - 1];
     const lang = ms.length <= 6;
     $("#mseg").innerHTML = ms.map((m) => '<button type="button" data-m="' + m + '">' + (lang ? MON[m - 1] : MK[m - 1]) + "</button>").join("");
+    if (!D.sichten) document.querySelectorAll('#nav a[data-t="db"], #nav a[data-t="guv"]').forEach((a) => { a.hidden = true; });
     const s = D.meta.stand; $("#stand").textContent = de(s.slice(0, 10)) + ", " + s.slice(11, 16) + " Uhr";
     const ab = D.kontrolle.abweichungen;
     $("#foot").innerHTML = "Quelle: " + esc(D.meta.quelle) + ", Mandant " + D.meta.mandantnr + " " + esc(D.meta.mandant) + ". Die Monatswerte je Konto kommen aus den Summen und Salden (Monatsverkehrszahlen), die Buchungen aus den Kontobuchungen. Kontrolle beim Aufbau: " +
@@ -552,6 +629,9 @@ const PLAIN = __PLAIN__;
     $("#allzu").addEventListener("click", () => { state.open.clear(); state.kopen.clear(); render(); });
     const tog = (set, v) => { if (set.has(v)) set.delete(v); else set.add(v); };
     function act(e) {
+      const au = e.target.closest("button[data-auf]"), zu = e.target.closest("button[data-zu]");
+      if (au) { const V = D.sichten.find((x) => x.k === au.dataset.auf); Object.keys(V.pos).forEach((k) => state.open.add(V.k + ":" + k)); render(); return true; }
+      if (zu) { Array.from(state.open).forEach((k) => { if (k.indexOf(zu.dataset.zu + ":") === 0) state.open.delete(k); }); state.kopen.clear(); render(); return true; }
       const th = e.target.closest("th[data-m]");
       if (th) { state.m = +th.dataset.m; render(); return true; }
       const gz = e.target.closest("button[data-goto]");

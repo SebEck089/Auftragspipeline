@@ -28,3 +28,12 @@ In diesem Ordner liegen nur Skripte und die Vorlage. Hier stehen keine Daten, ke
 - Vollständigkeit: regelmäßig ist ein Konto, das in jedem der bis zu drei Vormonate gebucht war. Abgelaufener Monat:
   gemeldet wird „nicht gebucht“ oder „weniger als die Hälfte des bisher niedrigsten Monatswerts“. Laufender Monat: nur
   Konten, deren Buchungen in den Vormonaten immer zum Monatsletzten kamen (Lohn und Gehalt), anteilig bis zum Tag des Updates.
+
+## Deckungsbeitragsrechnung und GuV nach dem Umsatzkostenverfahren
+
+- Beide Sichten nutzen dieselben Konten und Buchungen wie die BWA. Die Zuordnung steht in `bwa_daten.py` (`DB_POS`, `GUV_POS`).
+  Jedes Erfolgskonto steht in jeder Sicht in genau einer Zeile, das Ergebnis muss je Monat mit der BWA übereinstimmen
+  (die Seite prüft das und meldet Abweichungen).
+- Konto 4130 (gesetzlicher Sozialaufwand) wird je Monat im Verhältnis Löhne (4110, 4190, 4195) zu Gehältern (4100, 4120) geteilt.
+- Neue Konten fallen über ihre BWA-Zeile in eine Zeile der Sicht (`DB_BWA`, `GUV_BWA`) und werden als „Zuordnung nicht geprüft“
+  gekennzeichnet.

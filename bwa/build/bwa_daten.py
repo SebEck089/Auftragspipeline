@@ -108,6 +108,156 @@ KOSTEN = ["personal", "raum", "bsteuern", "versich", "besondere", "fahrzeug", "w
           "reparatur", "sonstige"]
 
 
+# ------------------------------------------------------------------ Weitere Sichten auf dieselben Konten
+# Deckungsbeitragsrechnung und GuV nach dem Umsatzkostenverfahren. Jede Sicht ordnet jedes Erfolgskonto genau einer Zeile zu.
+# Konto 4130 (gesetzlicher Sozialaufwand) wird je Monat im Verhaeltnis Loehne zu Gehaeltern geteilt (Art "lohn" und "gehalt").
+# Konten, die hier nicht einzeln stehen, fallen ueber ihre BWA-Zeile in eine Zeile der Sicht (Herkunft "bwa").
+LOHNKONTEN = [4110, 4190, 4195]          # Basis des Lohnanteils
+GEHALTKONTEN = [4100, 4120]
+SOZIAL_GETEILT = 4130
+# Zeile: (Schluessel, Bezeichnung, art, Prozent unter dem Wert, auch leer zeigen, Konten)
+DB_POS = [
+    ("umsatz", "Umsatzerlöse", "e", 0, 1, [8120, 8400]),
+    ("erlschm", "Erlösschmälerungen (gewährte Skonti)", "e", 0, 0, [8736]),
+    ("schrott", "Schrotterlöse", "e", 0, 0, [8520]),
+    ("bestand", "Bestandsveränderungen und aktivierte Eigenleistungen", "e", 0, 0, []),
+    ("material", "Materialeinsatz", "a", 1, 1, [3400, 3425, 3736, 8595]),
+    ("fremd", "Fremdleistungen und Fremdarbeiten", "a", 1, 1, [3100, 3102, 4909]),
+    ("hilfs", "Hilfs- und Betriebsstoffe der Fertigung", "a", 1, 0, [4980, 4981, 4982]),
+    ("abgabe", "Verpackung und Ausgangsfrachten", "a", 0, 0, [4710, 4730]),
+    ("lohn", "Fertigungslöhne mit Sozialaufwand", "a", 1, 1, [4110, 4190, 4195, 4144, 4194]),
+    ("gehalt", "Gehälter und übrige Personalkosten", "a", 1, 1, [4100, 4120, 4140, 4149, 4152, 4165, 4170, 4175, 4945, 4946]),
+    ("betrieb", "Gebäude, Energie und Maschinen", "a", 0, 0, [4240, 4250, 4260, 4400, 4800, 4810, 4960, 4969, 4985]),
+    ("fahrzeug", "Fahrzeugkosten mit Kraftfahrzeugsteuer", "a", 0, 0, [4510, 4530, 4540, 4560, 4570, 4595]),
+    ("vertrieb", "Werbung und Reisen", "a", 0, 0, [4600, 4653, 4663, 4664, 4666]),
+    ("verwaltung", "Verwaltung, EDV und Beratung", "a", 0, 0, [4360, 4380, 4806, 4900, 4910, 4925, 4930, 4931, 4940, 4950, 4955, 4970]),
+    ("afa", "Abschreibungen", "a", 0, 1, []),
+    ("soerl", "Sonstige betriebliche Erlöse (verrechnete Sachbezüge und übrige)", "e", 0, 0, [8610, 8611, 8613, 8640]),
+    ("neutral", "Neutrales Ergebnis (Zinsen und neutrale Posten)", "e", 0, 0, [2650]),
+    ("steuern", "Steuern vom Einkommen und Ertrag", "a", 0, 1, []),
+]
+DB_BWA = {"umsatz": "umsatz", "bestand": "bestand", "eigen": "bestand", "material": "material", "soerl": "soerl",
+          "personal": "gehalt", "raum": "betrieb", "bsteuern": "verwaltung", "versich": "verwaltung", "besondere": "betrieb",
+          "fahrzeug": "fahrzeug", "werbung": "vertrieb", "warenabgabe": "abgabe", "afa": "afa", "reparatur": "betrieb",
+          "sonstige": "verwaltung", "zinsaufw": "neutral", "neutraufw": "neutral", "zinsertr": "neutral",
+          "neutrertr": "neutral", "kalk": "neutral", "unbesetzt": "neutral", "nz": "neutral", "steuern": "steuern"}
+DB_AUFBAU = [
+    ("pos", "umsatz"), ("pos", "erlschm"),
+    ("sum", "netto", "Nettoumsatz", "Umsatzerlöse abzüglich Erlösschmälerungen", [(1, "umsatz"), (1, "erlschm")], ""),
+    ("pos", "schrott"), ("pos", "bestand"),
+    ("kopf", "Variable Kosten"),
+    ("pos", "material"), ("pos", "fremd"), ("pos", "hilfs"), ("pos", "abgabe"),
+    ("sum", "var", "Variable Kosten", "Materialeinsatz + Fremdleistungen + Hilfs- und Betriebsstoffe + Verpackung und Ausgangsfrachten",
+     [(1, "material"), (1, "fremd"), (1, "hilfs"), (1, "abgabe")], ""),
+    ("sum", "db1", "Deckungsbeitrag I", "Nettoumsatz + Schrotterlöse + Bestandsveränderungen − variable Kosten",
+     [(1, "netto"), (1, "schrott"), (1, "bestand"), (-1, "var")], "hl"),
+    ("pos", "lohn"),
+    ("sum", "db2", "Deckungsbeitrag II", "Deckungsbeitrag I − Fertigungslöhne mit Sozialaufwand", [(1, "db1"), (-1, "lohn")], "hl"),
+    ("kopf", "Fixkosten"),
+    ("pos", "gehalt"), ("pos", "betrieb"), ("pos", "fahrzeug"), ("pos", "vertrieb"), ("pos", "verwaltung"), ("pos", "afa"),
+    ("sum", "fix", "Fixkosten", "Summe von Gehältern bis Abschreibungen",
+     [(1, "gehalt"), (1, "betrieb"), (1, "fahrzeug"), (1, "vertrieb"), (1, "verwaltung"), (1, "afa")], ""),
+    ("pos", "soerl"),
+    ("sum", "be", "Betriebsergebnis", "Deckungsbeitrag II − Fixkosten + sonstige betriebliche Erlöse. Entspricht dem Betriebsergebnis der BWA",
+     [(1, "db2"), (-1, "fix"), (1, "soerl")], ""),
+    ("pos", "neutral"), ("pos", "steuern"),
+    ("sum", "ergebnis", "Vorläufiges Ergebnis", "Betriebsergebnis + neutrales Ergebnis − Steuern vom Einkommen und Ertrag",
+     [(1, "be"), (1, "neutral"), (-1, "steuern")], "end"),
+]
+DB_ANNAHMEN = [
+    "Variabel sind die Kosten, die mit dem Auftragsvolumen steigen und fallen: Material (3400, 3425, abzüglich erhaltener Skonti 3736), "
+    "Fremdleistungen (3100, 3102, 4909), Schweißdraht, Gas und sonstiger Betriebsbedarf (4980 bis 4982) sowie Verpackung und Ausgangsfrachten.",
+    "Schrotterlöse (8520) stehen bei den Erlösen im Deckungsbeitrag I, weil sie aus dem verarbeiteten Material entstehen.",
+    "Fertigungslöhne (4110, Aushilfen und Minijobs) stehen getrennt zwischen Deckungsbeitrag I und II. Sie folgen der Auslastung nur über "
+    "Überstunden, Aushilfen und Kurzarbeit und sind kurzfristig weitgehend fix.",
+    "Der gesetzliche Sozialaufwand (4130) ist in der Buchführung nicht nach Löhnen und Gehältern getrennt. Er wird je Monat im Verhältnis "
+    "der Löhne zu den Gehältern geteilt.",
+    "Gehälter stehen vollständig in den Fixkosten. Eine Trennung nach Fertigung, Vertrieb und Verwaltung ist ohne Kostenstellen nicht möglich.",
+    "Gas, Strom und Wasser (4240) stehen in den Fixkosten, obwohl ein Teil des Stroms mit der Maschinenlaufzeit schwankt.",
+    "Es sind keine Bestandsveränderungen gebucht. Die variablen Kosten sind der Einkauf des Monats und nicht der Verbrauch für den Umsatz "
+    "des Monats. Der Deckungsbeitrag eines einzelnen Monats schwankt deshalb mit dem Einkauf.",
+]
+GUV_POS = [
+    ("umsatz", "Umsatzerlöse", "e", 0, 1, [8120, 8400, 8736, 8520]),
+    ("hk", "Herstellungskosten der zur Erzielung der Umsatzerlöse erbrachten Leistungen", "a", 1, 1,
+     [3100, 3102, 3400, 3425, 3736, 8595, 4909, 4980, 4981, 4982, 4110, 4190, 4195, 4144, 4194,
+      4240, 4250, 4260, 4400, 4800, 4810, 4960, 4969, 4985]),
+    ("vertrieb", "Vertriebskosten", "a", 1, 1, [4710, 4730, 4600, 4653, 4663, 4664, 4666, 4530, 4540, 4560, 4570, 4595]),
+    ("verwaltung", "Allgemeine Verwaltungskosten", "a", 1, 1,
+     [4100, 4120, 4140, 4149, 4152, 4165, 4170, 4175, 4945, 4946, 4360, 4380, 4806, 4910, 4925, 4930, 4931, 4940, 4950, 4955, 4970]),
+    ("soertr", "Sonstige betriebliche Erträge", "e", 0, 1, [8610, 8611, 8613, 8640]),
+    ("soaufw", "Sonstige betriebliche Aufwendungen", "a", 0, 1, [4900]),
+    ("zinsertr", "Sonstige Zinsen und ähnliche Erträge", "e", 0, 1, [2650]),
+    ("zinsaufw", "Zinsen und ähnliche Aufwendungen", "a", 0, 1, []),
+    ("steuern", "Steuern vom Einkommen und vom Ertrag", "a", 0, 1, []),
+    ("sosteuern", "Sonstige Steuern", "a", 0, 1, [4510]),
+]
+GUV_BWA = {"umsatz": "umsatz", "bestand": "hk", "eigen": "hk", "material": "hk", "soerl": "soertr", "personal": "verwaltung",
+           "raum": "hk", "bsteuern": "sosteuern", "versich": "verwaltung", "besondere": "hk", "fahrzeug": "vertrieb",
+           "werbung": "vertrieb", "warenabgabe": "vertrieb", "afa": "hk", "reparatur": "hk", "sonstige": "verwaltung",
+           "zinsaufw": "zinsaufw", "neutraufw": "soaufw", "zinsertr": "zinsertr", "neutrertr": "soertr", "kalk": "soertr",
+           "unbesetzt": "soaufw", "nz": "soaufw", "steuern": "steuern"}
+GUV_AUFBAU = [
+    ("pos", "umsatz"), ("pos", "hk"),
+    ("sum", "brutto", "Bruttoergebnis vom Umsatz", "Umsatzerlöse − Herstellungskosten", [(1, "umsatz"), (-1, "hk")], "hl"),
+    ("pos", "vertrieb"), ("pos", "verwaltung"), ("pos", "soertr"), ("pos", "soaufw"),
+    ("sum", "ebit", "Betriebsergebnis (EBIT)",
+     "Bruttoergebnis vom Umsatz − Vertriebskosten − allgemeine Verwaltungskosten + sonstige betriebliche Erträge − sonstige betriebliche Aufwendungen",
+     [(1, "brutto"), (-1, "vertrieb"), (-1, "verwaltung"), (1, "soertr"), (-1, "soaufw")], "hl"),
+    ("pos", "zinsertr"), ("pos", "zinsaufw"), ("pos", "steuern"),
+    ("sum", "ens", "Ergebnis nach Steuern", "Betriebsergebnis + Zinserträge − Zinsaufwendungen − Steuern vom Einkommen und vom Ertrag",
+     [(1, "ebit"), (1, "zinsertr"), (-1, "zinsaufw"), (-1, "steuern")], ""),
+    ("pos", "sosteuern"),
+    ("sum", "ergebnis", "Vorläufiges Ergebnis (Jahresüberschuss)", "Ergebnis nach Steuern − sonstige Steuern", [(1, "ens"), (-1, "sosteuern")], "end"),
+]
+GUV_ANNAHMEN = [
+    "Gliederung nach § 275 Abs. 3 HGB. Die Kosten sind nach Funktionsbereichen geordnet und nicht nach Kostenarten.",
+    "Umsatzerlöse enthalten die gewährten Skonti (8736) als Minderung und die Schrotterlöse (8520), die nach dem Bilanzrichtlinie-"
+    "Umsetzungsgesetz zu den Umsatzerlösen zählen.",
+    "Herstellungskosten: Material, Fremdleistungen, Hilfs- und Betriebsstoffe, Fertigungslöhne mit anteiligem Sozialaufwand, Gebäude- und "
+    "Energiekosten, Maschinenkosten, Arbeitskleidung und Entsorgung. Gebäude und Energie stehen vollständig hier, weil der Standort "
+    "überwiegend Fertigung ist.",
+    "Vertriebskosten: Verpackung, Ausgangsfrachten, Werbung, Reisekosten und Fahrzeugkosten. Die Fahrzeugkosten stehen vollständig hier, "
+    "eine Trennung nach Nutzern ist aus der Buchführung nicht möglich.",
+    "Allgemeine Verwaltungskosten: Gehälter mit anteiligem Sozialaufwand und übrige Personalkosten, EDV, Beratung, Buchführung, Versicherungen "
+    "und Büro. Gehälter der Fertigungsleitung, der Arbeitsvorbereitung und des Vertriebs sind ohne Kostenstellen nicht abtrennbar. "
+    "Die Verwaltungskosten sind dadurch zu hoch und die Herstellungs- und Vertriebskosten zu niedrig ausgewiesen.",
+    "Der gesetzliche Sozialaufwand (4130) wird je Monat im Verhältnis der Löhne zu den Gehältern geteilt.",
+    "Es sind keine Bestandsveränderungen gebucht. Die Herstellungskosten sind die Kosten des Monats und nicht die Kosten der im Monat "
+    "abgerechneten Leistungen. Ein Umsatzkostenverfahren im strengen Sinn setzt die Bewertung der unfertigen und fertigen Erzeugnisse voraus.",
+    "Die Kraftfahrzeugsteuer (4510) steht unter Sonstige Steuern. Das Betriebsergebnis weicht deshalb um diesen Betrag vom Betriebsergebnis der BWA ab.",
+]
+SICHTEN = [
+    ("db", "Deckungsbeitragsrechnung", DB_POS, DB_BWA, DB_AUFBAU, DB_ANNAHMEN, ("s", "netto"), "vom Nettoumsatz",
+     {SOZIAL_GETEILT: [("lohn", "lohn"), ("gehalt", "gehalt")]}),
+    ("guv", "GuV nach dem Umsatzkostenverfahren", GUV_POS, GUV_BWA, GUV_AUFBAU, GUV_ANNAHMEN, ("p", "umsatz"), "der Umsatzerlöse",
+     {SOZIAL_GETEILT: [("hk", "lohn"), ("verwaltung", "gehalt")]}),
+]
+
+
+def sichten(konten):
+    """Sichten fuer die Seite: je Sicht Zeilen, Aufbau und Zuordnung jedes Kontos [[Zeile, Art, Herkunft]]."""
+    out = []
+    for key, name, pos, bwa, aufbau, annahmen, basis, basis_text, geteilt in SICHTEN:
+        fest = {k: p[0] for p in pos for k in p[5]}
+        doppelt = [k for k in fest if sum(k in p[5] for p in pos) > 1 or k in geteilt]
+        if doppelt:
+            raise SystemExit("FEHLER: Konto mehrfach zugeordnet in Sicht %s: %s" % (key, doppelt))
+        zu = {}
+        for k, info in konten.items():
+            if k in geteilt:
+                zu[str(k)] = [[z, art, "belegt"] for z, art in geteilt[k]]
+            elif k in fest:
+                zu[str(k)] = [[fest[k], "voll", "belegt"]]
+            else:
+                zu[str(k)] = [[bwa[info["z"]], "voll", "bwa"]]
+        out.append({"k": key, "n": name, "basis": list(basis), "basis_text": basis_text, "annahmen": annahmen,
+                    "pos": {p[0]: {"n": p[1], "art": p[2], "pct": p[3], "immer": p[4]} for p in pos},
+                    "aufbau": [list(a[:4]) + [[list(t) for t in a[4]], a[5]] if a[0] == "sum" else list(a) for a in aufbau],
+                    "zu": zu})
+    return out
+
+
 def jetzt():
     """Aktuelle Zeit in Deutschland."""
     try:
@@ -425,6 +575,11 @@ def bauen(dateien, heute):
     vk = [v for v in verr.values() if abs(v["saldo"]) > 0.005]
     vk.sort(key=lambda v: -abs(v["saldo"]))
 
+    lohnanteil = {}
+    for m in monate:
+        lo = sum(konten[k]["s"].get(m, 0.0) for k in LOHNKONTEN if k in konten)
+        ge = sum(konten[k]["s"].get(m, 0.0) for k in GEHALTKONTEN if k in konten)
+        lohnanteil[str(m)] = round(lo / (lo + ge), 6) if abs(lo + ge) > 0.005 else 0.0
     daten = {
         "meta": {"stand": jetzt().strftime("%Y-%m-%dT%H:%M"),
                  "heute": heute.isoformat(), "jahr": jahr, "monate": monate, "start": START_MONAT if jahr == START_JAHR else 1,
@@ -437,6 +592,8 @@ def bauen(dateien, heute):
         "namen": {str(k): v for k, v in namen.items() if v},
         "pruef": {str(m): v for m, v in pruef.items()},
         "struktur": struktur,
+        "sichten": sichten(konten),
+        "lohnanteil": lohnanteil,
         "verr": vk,
         "kontrolle": {"abweichungen": abw, "buchungen": sum(len(v) for v in buch.values()), "konten": len(konten),
                       "abrufe": len(abrufe)},
