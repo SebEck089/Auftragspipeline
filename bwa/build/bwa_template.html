@@ -121,6 +121,10 @@ th[data-tip] .u, td[data-tip] .u { text-decoration: underline dotted; text-under
 #bwa tr.kto.leer > td:first-child { padding-left: 44px; }
 #bwa tr.sum > td { font-weight: 600; font-size: 14px; background: var(--surface-2); border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); }
 #bwa tr.sum.end > td { font-size: 15px; background: var(--accent-soft); }
+#bwa .pz { display: block; font-size: 11px; font-weight: 400; color: var(--ink-3); }
+#bwa td.cur, #bwa th.cur { box-shadow: inset 2px 0 0 var(--accent); }
+#bwa th[data-m] { cursor: pointer; }
+#bwa tr.memo > td { font-weight: 600; font-size: 14px; border-top: 3px double var(--line-2); padding-top: 12px; }
 #bwa tr.kopf > td { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); padding-top: 14px; }
 #bwa tr.bu > td { padding: 0 0 0 30px; background: var(--ground); }
 .pb { display: block; height: 3px; margin-top: 3px; background: var(--line); border-radius: 2px; overflow: hidden; min-width: 60px; }
@@ -211,7 +215,7 @@ tr.vb > td { padding: 0 0 0 20px; background: var(--ground); }
     <section class="pane" id="p-bwa">
       <div class="pane-head"><h2 id="btitel"></h2>
         <div class="ctl"><button class="link" id="allauf" type="button">alle Konten zeigen</button><button class="link" id="allzu" type="button">alle schließen</button></div></div>
-      <p class="intro">Aufbau wie die DATEV-BWA (Form 01, Kontenrahmen SKR03). Beträge in €, netto ohne Umsatzsteuer. Zeile anklicken zeigt die Konten, Konto anklicken zeigt die einzelnen Buchungen.<span class="nurschmal"> Die Anteile an der Gesamtleistung zeigt die Seite ab 560 Pixel Breite.</span></p>
+      <p class="intro">Aufbau wie die DATEV-BWA (Form 01, Kontenrahmen SKR03). Beträge in €, netto ohne Umsatzsteuer. Zeile anklicken zeigt die Konten, Konto anklicken zeigt die einzelnen Buchungen. Unter den Zwischensummen und den großen Positionen steht der Anteil an der Gesamtleistung des Monats in Prozent. Der markierte Monat gilt für die Buchungen und die Vollständigkeit, ein Klick auf den Spaltenkopf wählt ihn.</p>
       <div id="bstatus"></div>
       <div class="tw"><table id="bwa"></table></div>
     </section>
@@ -364,40 +368,40 @@ const PLAIN = __PLAIN__;
       '<tr class="fs"><td colspan="4" class="tl">Summe · ' + (k ? "Wert in der BWA (" + (k && P[k.z].art === "e" ? "Haben minus Soll" : "Soll minus Haben") + "): " + eur(saldo) : "Saldo Soll minus Haben: " + eur(saldo)) + "</td><td class='num'>" + fmt0(soll) + "</td><td class='num'>" + fmt0(haben) + "</td></tr></tbody></table></div>";
   }
   function renderBwa() {
-    const ms = [state.m], kms = kumM();
-    const A = werte(ms);
-    const gl = A.s.gesamtleistung;
-    const pc = (v, g) => (Math.abs(g) < 0.005 || Math.abs(v) < 0.005 ? "" : nf2.format(v / g * 100));
+    const MS = D.meta.monate, ms = [state.m], kms = kumM();
+    const W = MS.map((m) => werte([m]));
+    const ncol = MS.length + 1;
+    const WICHTIG = { material: 1, personal: 1, sonstige: 1 };
+    const pc = (v, g) => (Math.abs(g) < 0.005 || Math.abs(v / g) < 0.00005 ? "" : nf2.format(v / g * 100));
     const fl = {}; pruef().pos.forEach((f) => { (fl[f.z] = fl[f.z] || []).push(f); });
-    $("#btitel").textContent = "BWA " + mName(state.m);
-    let h = "<thead><tr><th>Bezeichnung</th>" +
-      '<th class="num"' + tipA("<b>" + esc(mName(state.m)) + "</b>Summe der Buchungen der Buchungsperiode " + esc(mName(state.m)) + " laut DATEV (Monatsverkehrszahlen der Summen und Salden)." + '<span class="q">Maßgeblich ist die Buchungsperiode des Buchungsstapels, nicht das Belegdatum.</span>') + '><span class="u">' + esc(MK[state.m - 1] + " " + J) + "</span></th>" +
-      '<th class="num pc"' + tipA("<b>Anteil an der Gesamtleistung</b>Wert der Zeile geteilt durch die Gesamtleistung im " + esc(mName(state.m)) + ", in Prozent. Der Balken zeigt denselben Anteil.") + '><span class="u">% der Gesamt&shy;leistung</span></th>' +
-      "</tr></thead><tbody>";
-    const cells = (a, bar) => {
-      const pa = pc(a, gl);
-      return '<td class="num' + (a < -0.005 ? " neg" : "") + '">' + fmt(a) + '</td><td class="num pc">' + pa + (bar && pa ? '<span class="pb"><i style="width:' + Math.max(0, Math.min(100, a / gl * 100)).toFixed(1) + '%"></i></span>' : "") +
-        "</td>";
-    };
+    $("#btitel").textContent = "BWA " + (MS.length > 1 ? MON[MS[0] - 1] + " bis " + MON[MS[MS.length - 1] - 1] + " " + J : mName(state.m));
+    let h = "<thead><tr><th>Bezeichnung</th>" + MS.map((m) => '<th class="num' + (m === state.m ? " cur" : "") + '" data-m="' + m + '"' +
+      tipA("<b>" + esc(mName(m)) + "</b>Summe der Buchungen der Buchungsperiode " + esc(mName(m)) + " laut DATEV (Monatsverkehrszahlen der Summen und Salden)." + '<span class="q">Maßgeblich ist die Buchungsperiode des Buchungsstapels, nicht das Belegdatum. Anklicken wählt den Monat für Buchungen und Vollständigkeit.</span>') +
+      '><span class="u">' + esc(MK[m - 1] + " " + J) + "</span></th>").join("") + "</tr></thead><tbody>";
+    const cells = (f, pct) => MS.map((m, i) => {
+      const v = f(W[i], m), q = pct ? pc(v, W[i].s.gesamtleistung) : "";
+      return '<td class="num' + (v < -0.005 ? " neg" : "") + (m === state.m ? " cur" : "") + '">' + fmt(v) + (q ? '<span class="pz">' + q + " %</span>" : "") + "</td>";
+    }).join("");
     D.aufbau.forEach((a) => {
-      if (a[0] === "kopf") { h += '<tr class="kopf"><td colspan="3">' + esc(a[1]) + "</td></tr>"; return; }
+      if (a[0] === "kopf") { h += '<tr class="kopf"><td colspan="' + ncol + '">' + esc(a[1]) + "</td></tr>"; return; }
       if (a[0] === "sum") {
-        h += '<tr class="sum' + (a[1] === "ergebnis" ? " end" : "") + '"><td' + tipA("<b>" + esc(a[2]) + "</b>" + esc(a[3]) + ".") + '><span class="u">' + esc(a[2]) + "</span></td>" + cells(A.s[a[1]], false) + "</tr>";
+        h += '<tr class="sum' + (a[1] === "ergebnis" ? " end" : "") + '"><td' + tipA("<b>" + esc(a[2]) + "</b>" + esc(a[3]) + ".") + '><span class="u">' + esc(a[2]) + "</span></td>" + cells((w) => w.s[a[1]], a[1] !== "gesamtleistung") + "</tr>";
         return;
       }
       const x = P[a[1]], ks = (KZ[x.k] || []).filter((k) => (D.buch[k.nr] || []).length || Object.keys(k.s).length);
       if (x.k === "nz" && !ks.length) return;
       const open = state.open.has(x.k);
       h += '<tr class="pos' + (ks.length ? " klick" : " leer") + (open ? " open" : "") + '"' + (ks.length ? ' data-z="' + x.k + '" tabindex="0"' : "") + "><td><span" + tipA(posTip(x)) + ">" + esc(x.n) + "</span>" + marker(fl[x.k] || []) + "</td>" +
-        (ks.length ? cells(A.p[x.k], x.art === "a") : '<td class="num dim">–</td><td class="pc"></td>') + "</tr>";
+        (ks.length ? cells((w) => w.p[x.k], WICHTIG[x.k]) : MS.map((m) => '<td class="num dim' + (m === state.m ? " cur" : "") + '">–</td>').join("")) + "</tr>";
       if (!open) return;
       ks.forEach((k) => {
         const ko = state.kopen.has(k.nr);
         h += '<tr class="kto klick' + (ko ? " open" : "") + '" data-k="' + k.nr + '" tabindex="0"><td>' + k.nr + " " + esc(k.n) + marker((fl[x.k] || []).filter((f) => f.nr === k.nr)) +
-          (k.h !== "belegt" ? '<span class="chip w"' + tipA("Dieses Konto steht in keiner vorliegenden DATEV-BWA der FEG. Die Zeile ist aus dem SKR03-Kontenbereich abgeleitet und nicht bestätigt.") + ">Zuordnung nicht bestätigt</span>" : "") + "</td>" + cells(kval(k, ms), false) + "</tr>";
-        if (ko) { const kum = state.kum.has(k.nr); h += '<tr class="bu"><td colspan="3">' + buchungen(k.nr, kum ? kms : ms, kum, true) + "</td></tr>"; }
+          (k.h !== "belegt" ? '<span class="chip w"' + tipA("Dieses Konto steht in keiner vorliegenden DATEV-BWA der FEG. Die Zeile ist aus dem SKR03-Kontenbereich abgeleitet und nicht bestätigt.") + ">Zuordnung nicht bestätigt</span>" : "") + "</td>" + cells((w, m) => kval(k, [m]), false) + "</tr>";
+        if (ko) { const kum = state.kum.has(k.nr); h += '<tr class="bu"><td colspan="' + ncol + '">' + buchungen(k.nr, kum ? kms : ms, kum, true) + "</td></tr>"; }
       });
     });
+    h += '<tr class="memo"><td' + tipA("<b>EBITDA</b>Ergebnis vor Zinsen, Steuern und Abschreibungen. Hier gerechnet als Betriebsergebnis zuzüglich Abschreibungen." + '<span class="q">Neutrale Erträge und neutraler Aufwand sind nicht enthalten. Solange keine Abschreibungen gebucht sind, entspricht das EBITDA dem Betriebsergebnis.</span>') + '><span class="u">Nachrichtlich: EBITDA</span></td>' + cells((w) => w.s.betriebsergebnis + w.p.afa, true) + "</tr>";
     $("#bwa").innerHTML = h + "</tbody>";
     // Status
     const pr = pruef(); let st;
@@ -548,6 +552,8 @@ const PLAIN = __PLAIN__;
     $("#allzu").addEventListener("click", () => { state.open.clear(); state.kopen.clear(); render(); });
     const tog = (set, v) => { if (set.has(v)) set.delete(v); else set.add(v); };
     function act(e) {
+      const th = e.target.closest("th[data-m]");
+      if (th) { state.m = +th.dataset.m; render(); return true; }
       const gz = e.target.closest("button[data-goto]");
       if (gz) { gehZu(+gz.dataset.goto, +gz.dataset.p || 0); return true; }
       const kb = e.target.closest("button[data-kum]");
