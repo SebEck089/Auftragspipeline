@@ -9,9 +9,16 @@ In diesem Ordner liegen nur Skripte und die Vorlage. Hier stehen keine Daten, ke
 
 1. Abrufplan holen: `python3 bwa/build/bwa_daten.py plan`
 2. Jeden Abruf des Plans mit dem Werkzeug `datev_accounting_list` ausführen, mit `clientId` (FEG Metalltechnik GmbH,
-   Mandant 4089, aus `datev://accounting/clients`) und `fiscalYearId` aus dem Plan. Strikt nacheinander, nie parallel.
-   Antworten nicht abschreiben. Schlägt ein Abruf fehl, einmal wiederholen. Fehlt danach ein Abruf, nicht veröffentlichen.
+   Mandant 4089, aus `datev://accounting/clients`) und `fiscalYearId` aus dem Plan. Strikt nacheinander, nie parallel,
+   Summen und Salden zuerst. Antworten nicht abschreiben. Schlägt ein Abruf fehl, einmal wiederholen. Fehlt danach ein Abruf,
+   nicht veröffentlichen. Liefert ein Abruf statt der Daten einen Download-Link (Antwort zu groß für den Konnektor), das
+   Datumsfenster dieses Abrufs teilen und beide Hälften abrufen.
 3. Daten bauen: `python3 bwa/build/bwa_daten.py bauen --out <Arbeitsordner>/bwa_daten.json`
+   Das Skript liest die Antworten aus dem Sitzungsprotokoll (`~/.claude/projects`, falls vorhanden) und aus den Dateien, in denen
+   die Umgebung große Werkzeugergebnisse ablegt (`/tmp/claude-tool-results`). Ohne Sitzungsprotokoll, etwa in einer Chat-Sitzung,
+   zählen nur diese Dateien: die neuesten Summen und Salden und alle danach abgerufenen Buchungen. Der Abrufplan ist deshalb so
+   geschnitten, dass jede Antwort groß genug ist, um als Datei abgelegt zu werden (je Monat alle Erfolgskonten und die Konten
+   1360 bis 1599, der laufende Monat ab dem 16. des Vormonats).
    Die Ausgabe muss „Kontrolle: Buchungen je Konto und Monat = Summen und Salden, keine Abweichung“ melden.
    Bei „WARNUNG: nicht zugeordnete Erfolgskonten“ oder „Zuordnung nur nach Kontenbereich“ die Konten im Bericht nennen.
 4. Veränderung zum bisherigen Stand: `BWA_PASSWORT=… python3 bwa/build/bwa_diff.py --alt bwa/index.html --neu <Arbeitsordner>/bwa_daten.json`

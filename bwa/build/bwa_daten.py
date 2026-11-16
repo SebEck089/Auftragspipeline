@@ -25,7 +25,8 @@ START_MONAT = 8          # erster Monat mit Geschaeftsbetrieb der FEG im Wirtsch
 START_JAHR = 2026
 BAGATELLE = 250.0        # Konten mit ueblichem Monatswert oder fehlendem Betrag unter dieser Grenze werden nicht gemeldet
 RX_STAPEL = re.compile(r"^(\d{2})-(\d{4})/")
-RX_DATEI = re.compile(r"Output has been saved to (\S+?\.(?:txt|json))")
+RX_DATEI = re.compile(r"(?:Output has been saved to|whole result is saved at) (\S+?\.(?:txt|json))")
+ERGEBNIS_ORDNER = "/tmp/claude-tool-results"   # hier legt die Umgebung grosse Werkzeugergebnisse als Datei ab
 
 # ------------------------------------------------------------------ BWA-Aufbau (DATEV-BWA, Form 01, SKR03)
 # art: e = Ertrag (Haben minus Soll), a = Aufwand (Soll minus Haben). Bereiche = Kontonummern von bis (einschliesslich).
@@ -427,25 +428,28 @@ def plan(heute):
               "top": 1000, "skip": 0,
               "select": "id,account_number,caption,accounting_sums_and_balances_month_values,annual_value_debit,"
                         "annual_value_credit,balance,balance_debit_credit_identifier"}]
+    # Je Monat zwei Abrufe: alle Erfolgskonten (2000 bis 8999) und die Konten 1360 bis 1599 (Verrechnungskonten und durchlaufende
+    # Posten zusammen mit Forderungen und Vorsteuer). So ist jede Antwort gross genug, um von der Umgebung als Datei abgelegt zu
+    # werden, und klein genug fuer den DATEV-Konnektor. Der laufende Monat beginnt am 16. des Vormonats. Doppelte Buchungen
+    # werden ueber die Buchungs-ID entfernt. Liefert ein Abruf statt der Daten einen Download-Link, das Fenster teilen.
     erster = START_MONAT if heute.year == START_JAHR else 1
     fenster = []
     for m in range(erster, heute.month + 1):
         von = dt.date(heute.year, 1 if m == erster else m, 1)
+        if m == heute.month and m > erster:
+            von = dt.date(heute.year, m - 1, 16)
         bis = dt.date(heute.year, 12, 31) if m == heute.month else dt.date(heute.year, m, calendar.monthrange(heute.year, m)[1])
         fenster.append((von, bis))
-    for a, b, name in ((20000000, 69999999, "Aufwands- und neutrale Konten"), (80000000, 89999999, "Erlöskonten")):
+    for a, b, name in ((20000000, 89999999, "Erfolgskonten 2000 bis 8999"),
+                       (13600000, 15999999, "Konten 1360 bis 1599 (Verrechnungskonten, Forderungen, durchlaufende Posten)")):
         for von, bis in fenster:
-            calls.append({"schritt": "Buchungen %s %s bis %s" % (name, von.strftime("%d.%m."), bis.strftime("%d.%m.%Y")),
+            calls.append({"schritt": "Buchungen %s, %s bis %s" % (name, von.strftime("%d.%m."), bis.strftime("%d.%m.%Y")),
                           "resourceUri": "datev://accounting/account_postings",
                           "filter": "account_number ge %d and account_number le %d and date ge %sT00:00:00 and date le %sT00:00:00"
                                     % (a, b, von.isoformat(), bis.isoformat())})
-    for a, b, name in ((13600000, 13999999, "Verrechnungskonten"), (15900000, 15999999, "Durchlaufende Posten")):
-        calls.append({"schritt": "Buchungen %s" % name, "resourceUri": "datev://accounting/account_postings",
-                      "filter": "account_number ge %d and account_number le %d and date ge %d-01-01T00:00:00 and date le %d-12-31T00:00:00"
-                                % (a, b, heute.year, heute.year)})
     return {"werkzeug": "datev_accounting_list (DATEV-Konnektor)", "clientId": cid, "fiscalYearId": fj,
-            "hinweis": "Abrufe strikt nacheinander, nie parallel. Jeder Abruf mit clientId und fiscalYearId. "
-                       "Antworten nicht abschreiben, das Skript liest sie aus dem Sitzungsprotokoll.",
+            "hinweis": "Abrufe strikt nacheinander, nie parallel, Summen und Salden zuerst. Jeder Abruf mit clientId und fiscalYearId. "
+                       "Antworten nicht abschreiben, das Skript liest sie aus dem Sitzungsprotokoll und aus den ausgelagerten Ergebnisdateien.",
             "abrufe": calls}
 
 
@@ -498,13 +502,56 @@ def tool_ergebnisse(dateien):
                         yield inp, items
 
 
+def _art(items):
+    """Art einer DATEV-Antwort am Inhalt erkennen: Summen und Salden oder Kontobuchungen."""
+    x = [i for i in items[:20] if isinstance(i, dict)]
+    if not x:
+        return None
+    if all("date" in i and "account_number" in i for i in x) and any("amount_debit" in i or "amount_credit" in i for i in x):
+        return "buchungen"
+    if all("account_number" in i and "date" not in i for i in x) and any(
+            "accounting_sums_and_balances_month_values" in i or "balance" in i or "annual_value_debit" in i or "annual_value_credit" in i
+            for i in x):
+        return "susa"
+    return None
+
+
+def datei_ergebnisse(ordner):
+    """DATEV-Antworten, die die Umgebung als Datei ablegt. Gelesen werden die neuesten Summen und Salden und alle
+    Kontobuchungen, die danach abgerufen wurden (der Abrufplan beginnt mit den Summen und Salden)."""
+    fs = []
+    for f in glob.glob(os.path.join(ordner, "**", "*.txt"), recursive=True) + glob.glob(os.path.join(ordner, "**", "*.json"), recursive=True):
+        try:
+            d = json.load(open(f, encoding="utf-8"))
+        except (ValueError, OSError, UnicodeDecodeError):
+            continue
+        if not isinstance(d, dict) or d.get("status") != 200:
+            continue
+        b = d.get("body")
+        items = b.get("items") if isinstance(b, dict) else b
+        if isinstance(items, list) and items and _art(items):
+            fs.append((os.path.getmtime(f), f, _art(items), items))
+    fs.sort()
+    susa = [x for x in fs if x[2] == "susa"]
+    if not susa:
+        return
+    ab = susa[-1][0]
+    for t, f, art, items in fs:
+        if t < ab:
+            continue
+        if art == "susa" and f == susa[-1][1]:
+            yield {"resourceUri": "datev://accounting/accounting_sums_and_balances", "skip": 0}, items
+        elif art == "buchungen":
+            yield {"resourceUri": "datev://accounting/account_postings", "filter": "Datei " + os.path.basename(f)}, items
+
+
 def kto(n):
     return int(n) // 10000
 
 
-def lesen(dateien):
+def lesen(quellen):
     susa, post, namen, abrufe = None, {}, {}, []
-    for inp, items in tool_ergebnisse(dateien):
+    for inp, items in quellen:
         uri = inp.get("resourceUri", "")
         if uri.endswith("accounting_sums_and_balances"):
             if inp.get("skip") in (None, 0):
@@ -527,8 +574,8 @@ def r2(v):
     return round(v + 0.0, 2)
 
 
-def bauen(dateien, heute):
-    susa, post, namen, abrufe = lesen(dateien)
+def bauen(quellen, heute):
+    susa, post, namen, abrufe = lesen(quellen)
     if not susa:
         raise SystemExit("FEHLER: keine Summen und Salden in den Protokollen gefunden")
     if not post:
@@ -724,10 +771,15 @@ def bauen(dateien, heute):
 
 
 def protokolle(ordner):
-    fs = sorted(glob.glob(os.path.join(ordner, "**", "*.jsonl"), recursive=True), key=os.path.getmtime)
-    if not fs:
-        raise SystemExit("FEHLER: keine Sitzungsprotokolle unter %s" % ordner)
-    return fs
+    return sorted(glob.glob(os.path.join(ordner, "**", "*.jsonl"), recursive=True), key=os.path.getmtime)
+
+
+def quellen(protokoll_ordner, ergebnis_ordner):
+    """Erst die abgelegten Ergebnisdateien, danach das Sitzungsprotokoll (sein letzter Abruf gilt)."""
+    for x in datei_ergebnisse(ergebnis_ordner):
+        yield x
+    for x in tool_ergebnisse(protokolle(protokoll_ordner)):
+        yield x
 
 
 def main():
@@ -736,12 +788,13 @@ def main():
     ap.add_argument("--heute")
     ap.add_argument("--out", default="bwa_daten.json")
     ap.add_argument("--protokolle", default=os.path.expanduser("~/.claude/projects"))
+    ap.add_argument("--ergebnisse", default=ERGEBNIS_ORDNER)
     a = ap.parse_args()
     heute = dt.date.fromisoformat(a.heute) if a.heute else jetzt().date()
     if a.modus == "plan":
         print(json.dumps(plan(heute), ensure_ascii=False, indent=1))
         return
-    d = bauen(protokolle(a.protokolle), heute)
+    d = bauen(quellen(a.protokolle, a.ergebnisse), heute)
     json.dump(d, open(a.out, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     k = d["kontrolle"]
     print("Stand %s | %d Erfolgskonten | %d Buchungen aus %d Abrufen | Monate %s" % (
