@@ -2,7 +2,7 @@
 
 Seite: https://sebeck089.github.io/Auftragspipeline/bwa/ (Datei `bwa/index.html` in diesem Repository, Zweig `main`).
 Die Seite enthält die Buchhaltungsdaten verschlüsselt, Passwort wie beim Dashboard Auftragspipeline.
-Aktualisierung täglich um 17:00 Uhr über eine geplante Aufgabe. Die Seite nennt den Rhythmus im Kopf.
+Aktualisierung täglich um 16:37 Uhr über die geplante Aufgabe „BWA-Dashboard FEG (täglich)“. Die Seite nennt den Rhythmus im Kopf.
 In diesem Ordner liegen nur Skripte und die Vorlage. Hier stehen keine Daten, kein Passwort und keine Kennungen.
 
 ## Schritte (eine Claude-Sitzung mit DATEV-Konnektor)
