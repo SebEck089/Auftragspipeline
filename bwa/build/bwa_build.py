@@ -28,6 +28,11 @@ def main():
     ap.add_argument("--klartext", action="store_true")
     a = ap.parse_args()
     d = json.loads(Path(a.daten).read_text(encoding="utf-8"))
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import bwa_daten
+    fehler = bwa_daten.pruefe_sichten(d)
+    if fehler:
+        sys.exit("FEHLER: Deckungsbeitragsrechnung oder GuV stimmen nicht mit der BWA überein, Seite nicht gebaut: " + " | ".join(fehler[:5]))
     if d["kontrolle"]["abweichungen"]:
         print("HINWEIS: %d Abweichungen Buchungen gegen Summen und Salden, sie stehen in der Fussnote der Seite"
               % len(d["kontrolle"]["abweichungen"]))

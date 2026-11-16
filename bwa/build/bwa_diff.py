@@ -93,6 +93,29 @@ def main():
         print("\nVollständigkeit %s: %d Positionen wahrscheinlich fehlend, Kosten %s, Erlöse %s, Ergebnis laut Buchführung %s, nach fehlenden Buchungen %s%s" % (
             MK[m - 1], len(p["pos"]), f(p["fehl_kosten"]), f(p["fehl_erloese"]), f(p["ergebnis"]), f(p["ergebnis_bereinigt"]),
             " (Monat läuft, Tag %d von %d)" % (p["tag"], p["tage"]) if p["laeuft"] else ""))
+    sichten_vergleich(alt, neu)
+
+
+def sichten_vergleich(alt, neu):
+    """Zwischensummen von Deckungsbeitragsrechnung und GuV je Monat, bisheriger gegen neuen Stand (nur Veraenderungen)."""
+    for V in neu.get("sichten", []):
+        VA = next((v for v in alt.get("sichten", []) if v["k"] == V["k"]), None)
+        sums = [a for a in V["aufbau"] if a[0] == "sum"]
+        alt_sums = {a[1] for a in VA["aufbau"] if a[0] == "sum"} if VA else set()
+        zeilen = []
+        for m in neu["meta"]["monate"]:
+            _, sn = B.sicht_werte(neu, V["k"], m)
+            sa = B.sicht_werte(alt, V["k"], m)[1] if VA and m in alt["meta"]["monate"] else {}
+            for a in sums:
+                vn = sn[a[1]]
+                if a[1] not in alt_sums:
+                    zeilen.append("   %s %-45s neu %s" % (MK[m - 1], a[2], f(vn)))
+                elif abs(vn - sa.get(a[1], 0.0)) >= 0.005:
+                    zeilen.append("   %s %-45s %s -> %s (%s%s)" % (MK[m - 1], a[2], f(sa.get(a[1], 0.0)), f(vn),
+                                                                  "+" if vn > sa.get(a[1], 0.0) else "", f(vn - sa.get(a[1], 0.0))))
+        print("\n%s: %s" % (V["n"], "Zwischensummen je Monat" if zeilen else "keine Veränderung der Zwischensummen"))
+        for z in zeilen:
+            print(z)
 
 
 if __name__ == "__main__":

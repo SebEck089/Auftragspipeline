@@ -109,30 +109,52 @@ KOSTEN = ["personal", "raum", "bsteuern", "versich", "besondere", "fahrzeug", "w
 
 
 # ------------------------------------------------------------------ Weitere Sichten auf dieselben Konten
-# Deckungsbeitragsrechnung und GuV nach dem Umsatzkostenverfahren. Jede Sicht ordnet jedes Erfolgskonto genau einer Zeile zu.
-# Konto 4130 (gesetzlicher Sozialaufwand) wird je Monat im Verhaeltnis Loehne zu Gehaeltern geteilt (Art "lohn" und "gehalt").
+# Deckungsbeitragsrechnung und GuV nach dem Umsatzkostenverfahren. Jede Sicht ordnet jedes Erfolgskonto genau einer Zeile zu,
+# ausgenommen die aufgeteilten Konten (Anteile je Monat, zusammen 100 %):
+# - Konto 4130 (gesetzlicher Sozialaufwand) wird je Monat im Verhaeltnis Loehne zu Gehaeltern geteilt (Faktor "lohn" und "gehalt").
+# - Gehaelter, Gehaltsanteil von 4130, uebrige Personalkosten und verrechnete Sachbezuege werden nach dem Gehaltsschluessel auf die
+#   Funktionsbereiche Herstellung, Vertrieb und Verwaltung geteilt (Faktor "s_hk", "s_vt", "s_vw", "s_vv" = Vertrieb und Verwaltung).
+# Ein Anteil ist ein Ausdruck aus Faktoren: "*" multipliziert, "+" addiert, zum Beispiel "lohn+gehalt*s_hk".
 # Konten, die hier nicht einzeln stehen, fallen ueber ihre BWA-Zeile in eine Zeile der Sicht (Herkunft "bwa").
 LOHNKONTEN = [4110, 4190, 4195]          # Basis des Lohnanteils
 GEHALTKONTEN = [4100, 4120]
 SOZIAL_GETEILT = 4130
+# Gehaltsschluessel: Anteil der Gehaelter je Funktionsbereich in Prozent (Herstellung, Vertrieb), Verwaltung ist der Rest.
+# Grundlage: Gehaltsliste der FEG, Blatt Abrechnungen, Gesamtbrutto der Gehaltsempfaenger und der Geschaeftsfuehrung je Monat
+# (ohne Auszubildende, Stundenloehne und Minijobs). Zuordnung nach dem Bereich laut Gehaltsliste:
+#   Herstellung: Arbeitsvorbereitung, Meister der Hallen, Einkauf, Instandhaltung, Logistik
+#   Vertrieb: Vertrieb, Lkw-Fahrer
+#   Verwaltung: Geschaeftsfuehrung, Buchhaltung und Personal
+# Ein Monat ohne Eintrag nutzt den letzten Eintrag davor. Pflege quartalsweise und bei Ein- und Austritten von Angestellten.
+# Hier stehen nur Prozentsaetze, keine Namen, Personalnummern oder Gehaelter.
+GEHALT_SCHLUESSEL = {
+    (2026, 8): (76.47, 9.86),
+    (2026, 9): (66.83, 8.62),
+    (2026, 10): (66.05, 11.53),
+}
+GEHALT_SCHLUESSEL_STAND = "Lohnabrechnungen August bis Oktober 2026 (Gehaltsliste vom 12.11.2026)"
+# Konten, die nach dem Gehaltsschluessel geteilt werden (4130 zusaetzlich mit seinem Gehaltsanteil)
+SCHLUESSEL_KONTEN = [4100, 4120, 4140, 4149, 4152, 4165, 4170, 4175, 4945, 4946, 8595, 8610, 8611, 8613]
 # Zeile: (Schluessel, Bezeichnung, art, Prozent unter dem Wert, auch leer zeigen, Konten)
 DB_POS = [
     ("umsatz", "Umsatzerlöse", "e", 0, 1, [8120, 8400]),
     ("erlschm", "Erlösschmälerungen (gewährte Skonti)", "e", 0, 0, [8736]),
     ("schrott", "Schrotterlöse", "e", 0, 0, [8520]),
     ("bestand", "Bestandsveränderungen und aktivierte Eigenleistungen", "e", 0, 0, []),
-    ("material", "Materialeinsatz", "a", 1, 1, [3400, 3425, 3736, 8595]),
-    ("fremd", "Fremdleistungen und Fremdarbeiten", "a", 1, 1, [3100, 3102, 4909]),
-    ("hilfs", "Hilfs- und Betriebsstoffe der Fertigung", "a", 1, 0, [4980, 4981, 4982]),
+    ("material", "Materialeinsatz", "a", 1, 1, [3400, 3425, 3736]),
+    ("fremd", "Fremdfertigung", "a", 1, 1, [3100, 3102]),
+    ("hilfs", "Hilfs- und Betriebsstoffe und Entsorgung", "a", 1, 0, [4980, 4981, 4982, 4969]),
     ("abgabe", "Verpackung und Ausgangsfrachten", "a", 0, 0, [4710, 4730]),
-    ("lohn", "Fertigungslöhne mit Sozialaufwand", "a", 1, 1, [4110, 4190, 4195, 4144, 4194]),
-    ("gehalt", "Gehälter und übrige Personalkosten", "a", 1, 1, [4100, 4120, 4140, 4149, 4152, 4165, 4170, 4175, 4945, 4946]),
-    ("betrieb", "Gebäude, Energie und Maschinen", "a", 0, 0, [4240, 4250, 4260, 4400, 4800, 4810, 4960, 4969, 4985]),
+    ("lohn", "Fertigungslöhne Stammbelegschaft mit Sozialaufwand und Arbeitskleidung", "a", 1, 1, [4110, 4190, 4195, 4144, 4194, 4400]),
+    ("leih", "Leiharbeit", "a", 1, 1, [4909]),
+    ("fgehalt", "Gehälter der Fertigungsbereiche", "a", 1, 1, []),
+    ("betrieb", "Gebäude, Energie und Maschinen", "a", 0, 0, [4240, 4250, 4260, 4800, 4810, 4960, 4985]),
+    ("afa", "Abschreibungen", "a", 0, 1, []),
+    ("gehalt", "Gehälter Vertrieb und Verwaltung", "a", 1, 1, []),
     ("fahrzeug", "Fahrzeugkosten mit Kraftfahrzeugsteuer", "a", 0, 0, [4510, 4530, 4540, 4560, 4570, 4595]),
     ("vertrieb", "Werbung und Reisen", "a", 0, 0, [4600, 4653, 4663, 4664, 4666]),
     ("verwaltung", "Verwaltung, EDV und Beratung", "a", 0, 0, [4360, 4380, 4806, 4900, 4910, 4925, 4930, 4931, 4940, 4950, 4955, 4970]),
-    ("afa", "Abschreibungen", "a", 0, 1, []),
-    ("soerl", "Sonstige betriebliche Erlöse (verrechnete Sachbezüge und übrige)", "e", 0, 0, [8610, 8611, 8613, 8640]),
+    ("soerl", "Sonstige betriebliche Erlöse", "e", 0, 0, [8640]),
     ("neutral", "Neutrales Ergebnis (Zinsen und neutrale Posten)", "e", 0, 0, [2650]),
     ("steuern", "Steuern vom Einkommen und Ertrag", "a", 0, 1, []),
 ]
@@ -147,50 +169,76 @@ DB_AUFBAU = [
     ("pos", "schrott"), ("pos", "bestand"),
     ("kopf", "Variable Kosten"),
     ("pos", "material"), ("pos", "fremd"), ("pos", "hilfs"), ("pos", "abgabe"),
-    ("sum", "var", "Variable Kosten", "Materialeinsatz + Fremdleistungen + Hilfs- und Betriebsstoffe + Verpackung und Ausgangsfrachten",
+    ("sum", "var", "Variable Kosten",
+     "Materialeinsatz + Fremdfertigung + Hilfs- und Betriebsstoffe und Entsorgung + Verpackung und Ausgangsfrachten",
      [(1, "material"), (1, "fremd"), (1, "hilfs"), (1, "abgabe")], ""),
     ("sum", "db1", "Deckungsbeitrag I", "Nettoumsatz + Schrotterlöse + Bestandsveränderungen − variable Kosten",
      [(1, "netto"), (1, "schrott"), (1, "bestand"), (-1, "var")], "hl"),
-    ("pos", "lohn"),
-    ("sum", "db2", "Deckungsbeitrag II", "Deckungsbeitrag I − Fertigungslöhne mit Sozialaufwand", [(1, "db1"), (-1, "lohn")], "hl"),
-    ("kopf", "Fixkosten"),
-    ("pos", "gehalt"), ("pos", "betrieb"), ("pos", "fahrzeug"), ("pos", "vertrieb"), ("pos", "verwaltung"), ("pos", "afa"),
-    ("sum", "fix", "Fixkosten", "Summe von Gehältern bis Abschreibungen",
-     [(1, "gehalt"), (1, "betrieb"), (1, "fahrzeug"), (1, "vertrieb"), (1, "verwaltung"), (1, "afa")], ""),
+    ("kopf", "Fertigungspersonal"),
+    ("pos", "lohn"), ("pos", "leih"),
+    ("sum", "fp", "Fertigungspersonal", "Fertigungslöhne der Stammbelegschaft mit Sozialaufwand und Arbeitskleidung + Leiharbeit",
+     [(1, "lohn"), (1, "leih")], ""),
+    ("quote", "leihquote", "Leiharbeitsquote", "Anteil der Leiharbeit am Fertigungspersonal in Prozent", ["leih"], ["fp"]),
+    ("sum", "db2", "Deckungsbeitrag II", "Deckungsbeitrag I − Fertigungspersonal", [(1, "db1"), (-1, "fp")], "hl"),
+    ("kopf", "Fertigungsgemeinkosten"),
+    ("pos", "fgehalt"), ("pos", "betrieb"), ("pos", "afa"),
+    ("sum", "fgk", "Fertigungsgemeinkosten", "Gehälter der Fertigungsbereiche + Gebäude, Energie und Maschinen + Abschreibungen",
+     [(1, "fgehalt"), (1, "betrieb"), (1, "afa")], ""),
+    ("sum", "db3", "Deckungsbeitrag III",
+     "Deckungsbeitrag II − Fertigungsgemeinkosten. Deckungsbeitrag III + Verpackung und Ausgangsfrachten = Bruttoergebnis vom Umsatz der GuV",
+     [(1, "db2"), (-1, "fgk")], "hl"),
+    ("kopf", "Fixkosten Vertrieb und Verwaltung"),
+    ("pos", "gehalt"), ("pos", "fahrzeug"), ("pos", "vertrieb"), ("pos", "verwaltung"),
+    ("sum", "fix", "Fixkosten Vertrieb und Verwaltung", "Gehälter Vertrieb und Verwaltung + Fahrzeugkosten + Werbung und Reisen + Verwaltung",
+     [(1, "gehalt"), (1, "fahrzeug"), (1, "vertrieb"), (1, "verwaltung")], ""),
     ("pos", "soerl"),
-    ("sum", "be", "Betriebsergebnis", "Deckungsbeitrag II − Fixkosten + sonstige betriebliche Erlöse. Entspricht dem Betriebsergebnis der BWA",
-     [(1, "db2"), (-1, "fix"), (1, "soerl")], ""),
+    ("sum", "be", "Betriebsergebnis",
+     "Deckungsbeitrag III − Fixkosten Vertrieb und Verwaltung + sonstige betriebliche Erlöse. Entspricht dem Betriebsergebnis der BWA",
+     [(1, "db3"), (-1, "fix"), (1, "soerl")], ""),
     ("pos", "neutral"), ("pos", "steuern"),
     ("sum", "ergebnis", "Vorläufiges Ergebnis", "Betriebsergebnis + neutrales Ergebnis − Steuern vom Einkommen und Ertrag",
      [(1, "be"), (1, "neutral"), (-1, "steuern")], "end"),
 ]
+SCHLUESSEL_TEXT = ("Gehälter (4120), der Gehaltsanteil des Sozialaufwands (4130), die übrigen Personalkosten (4140 bis 4175, 4945, 4946) "
+                   "und die verrechneten Sachbezüge sind in der Buchführung nicht nach Funktionsbereichen getrennt. Sie werden je Monat nach "
+                   "dem Gehaltsschlüssel geteilt: Anteil der Gehälter je Funktionsbereich laut Lohnabrechnung des Monats. Herstellung sind "
+                   "Arbeitsvorbereitung, Meister der Hallen, Einkauf, Instandhaltung und Logistik, Vertrieb sind Vertrieb und Lkw-Fahrer, "
+                   "Verwaltung sind Geschäftsführung, Buchhaltung und Personal. Ein Monat ohne eigene Lohnabrechnung im Schlüssel nutzt den "
+                   "letzten Monat davor.")
+SACHBEZUG_TEXT = ("Die verrechneten Sachbezüge (8595, 8610, 8611, 8613) kommen aus der Lohnabrechnung. Sie gleichen den geldwerten Vorteil "
+                  "für Firmenwagen, Firmenrad und sonstige Sachbezüge aus, der im Bruttolohn enthalten ist, und mindern deshalb die Gehälter.")
 DB_ANNAHMEN = [
     "Variabel sind die Kosten, die mit dem Auftragsvolumen steigen und fallen: Material (3400, 3425, abzüglich erhaltener Skonti 3736), "
-    "Fremdleistungen (3100, 3102, 4909), Schweißdraht, Gas und sonstiger Betriebsbedarf (4980 bis 4982) sowie Verpackung und Ausgangsfrachten.",
+    "Fremdfertigung (3100, 3102), Schweißdraht, Gas, sonstiger Betriebsbedarf und Entsorgung (4980 bis 4982, 4969) sowie Verpackung "
+    "und Ausgangsfrachten.",
     "Schrotterlöse (8520) stehen bei den Erlösen im Deckungsbeitrag I, weil sie aus dem verarbeiteten Material entstehen.",
-    "Fertigungslöhne (4110, Aushilfen und Minijobs) stehen getrennt zwischen Deckungsbeitrag I und II. Sie folgen der Auslastung nur über "
-    "Überstunden, Aushilfen und Kurzarbeit und sind kurzfristig weitgehend fix.",
+    "Fertigungspersonal sind die Fertigungslöhne der Stammbelegschaft (4110, Aushilfen und Minijobs) mit anteiligem Sozialaufwand und "
+    "Arbeitskleidung (4400) sowie die Leiharbeit (4909, Leiharbeiter der Nola Metal sp. z o.o.). Die Leiharbeit ersetzt eigene "
+    "Fertigungsstunden. Die Leiharbeitsquote ist ihr Anteil am Fertigungspersonal.",
+    "Fertigungsgemeinkosten sind die Gehälter der Fertigungsbereiche, Gebäude, Energie und Maschinen sowie die Abschreibungen. "
+    "Deckungsbeitrag III zuzüglich Verpackung und Ausgangsfrachten ergibt das Bruttoergebnis vom Umsatz der GuV.",
+    SCHLUESSEL_TEXT,
+    SACHBEZUG_TEXT,
     "Der gesetzliche Sozialaufwand (4130) ist in der Buchführung nicht nach Löhnen und Gehältern getrennt. Er wird je Monat im Verhältnis "
     "der Löhne zu den Gehältern geteilt.",
-    "Gehälter stehen vollständig in den Fixkosten. Eine Trennung nach Fertigung, Vertrieb und Verwaltung ist ohne Kostenstellen nicht möglich.",
-    "Gas, Strom und Wasser (4240) stehen in den Fixkosten, obwohl ein Teil des Stroms mit der Maschinenlaufzeit schwankt.",
+    "Gas, Strom und Wasser (4240) stehen in den Fertigungsgemeinkosten, obwohl ein Teil des Stroms mit der Maschinenlaufzeit schwankt.",
     "Es sind keine Bestandsveränderungen gebucht. Die variablen Kosten sind der Einkauf des Monats und nicht der Verbrauch für den Umsatz "
     "des Monats. Der Deckungsbeitrag eines einzelnen Monats schwankt deshalb mit dem Einkauf.",
 ]
 GUV_POS = [
     ("umsatz", "Umsatzerlöse", "e", 0, 1, [8120, 8400, 8736, 8520]),
     ("hk", "Herstellungskosten der zur Erzielung der Umsatzerlöse erbrachten Leistungen", "a", 1, 1,
-     [3100, 3102, 3400, 3425, 3736, 8595, 4909, 4980, 4981, 4982, 4110, 4190, 4195, 4144, 4194,
-      4240, 4250, 4260, 4400, 4800, 4810, 4960, 4969, 4985]),
+     [3100, 3102, 3400, 3425, 3736, 4909, 4980, 4981, 4982, 4969, 4110, 4190, 4195, 4144, 4194, 4400,
+      4240, 4250, 4260, 4800, 4810, 4960, 4985]),
     ("vertrieb", "Vertriebskosten", "a", 1, 1, [4710, 4730, 4600, 4653, 4663, 4664, 4666, 4530, 4540, 4560, 4570, 4595]),
     ("verwaltung", "Allgemeine Verwaltungskosten", "a", 1, 1,
-     [4100, 4120, 4140, 4149, 4152, 4165, 4170, 4175, 4945, 4946, 4360, 4380, 4806, 4910, 4925, 4930, 4931, 4940, 4950, 4955, 4970]),
-    ("soertr", "Sonstige betriebliche Erträge", "e", 0, 1, [8610, 8611, 8613, 8640]),
+     [4360, 4380, 4806, 4910, 4925, 4930, 4931, 4940, 4950, 4955, 4970]),
+    ("soertr", "Sonstige betriebliche Erträge", "e", 0, 1, [8640]),
     ("soaufw", "Sonstige betriebliche Aufwendungen", "a", 0, 1, [4900]),
+    ("sosteuern", "Sonstige Steuern", "a", 0, 1, [4510]),
     ("zinsertr", "Sonstige Zinsen und ähnliche Erträge", "e", 0, 1, [2650]),
     ("zinsaufw", "Zinsen und ähnliche Aufwendungen", "a", 0, 1, []),
     ("steuern", "Steuern vom Einkommen und vom Ertrag", "a", 0, 1, []),
-    ("sosteuern", "Sonstige Steuern", "a", 0, 1, [4510]),
 ]
 GUV_BWA = {"umsatz": "umsatz", "bestand": "hk", "eigen": "hk", "material": "hk", "soerl": "soertr", "personal": "verwaltung",
            "raum": "hk", "bsteuern": "sosteuern", "versich": "verwaltung", "besondere": "hk", "fahrzeug": "vertrieb",
@@ -200,39 +248,111 @@ GUV_BWA = {"umsatz": "umsatz", "bestand": "hk", "eigen": "hk", "material": "hk",
 GUV_AUFBAU = [
     ("pos", "umsatz"), ("pos", "hk"),
     ("sum", "brutto", "Bruttoergebnis vom Umsatz", "Umsatzerlöse − Herstellungskosten", [(1, "umsatz"), (-1, "hk")], "hl"),
-    ("pos", "vertrieb"), ("pos", "verwaltung"), ("pos", "soertr"), ("pos", "soaufw"),
+    ("pos", "vertrieb"), ("pos", "verwaltung"), ("pos", "soertr"), ("pos", "soaufw"), ("pos", "sosteuern"),
     ("sum", "ebit", "Betriebsergebnis (EBIT)",
-     "Bruttoergebnis vom Umsatz − Vertriebskosten − allgemeine Verwaltungskosten + sonstige betriebliche Erträge − sonstige betriebliche Aufwendungen",
-     [(1, "brutto"), (-1, "vertrieb"), (-1, "verwaltung"), (1, "soertr"), (-1, "soaufw")], "hl"),
+     "Bruttoergebnis vom Umsatz − Vertriebskosten − allgemeine Verwaltungskosten + sonstige betriebliche Erträge − sonstige "
+     "betriebliche Aufwendungen − sonstige Steuern",
+     [(1, "brutto"), (-1, "vertrieb"), (-1, "verwaltung"), (1, "soertr"), (-1, "soaufw"), (-1, "sosteuern")], "hl"),
     ("pos", "zinsertr"), ("pos", "zinsaufw"), ("pos", "steuern"),
-    ("sum", "ens", "Ergebnis nach Steuern", "Betriebsergebnis + Zinserträge − Zinsaufwendungen − Steuern vom Einkommen und vom Ertrag",
-     [(1, "ebit"), (1, "zinsertr"), (-1, "zinsaufw"), (-1, "steuern")], ""),
-    ("pos", "sosteuern"),
-    ("sum", "ergebnis", "Vorläufiges Ergebnis (Jahresüberschuss)", "Ergebnis nach Steuern − sonstige Steuern", [(1, "ens"), (-1, "sosteuern")], "end"),
+    ("sum", "ergebnis", "Vorläufiges Ergebnis (Jahresüberschuss)",
+     "Betriebsergebnis + Zinserträge − Zinsaufwendungen − Steuern vom Einkommen und vom Ertrag",
+     [(1, "ebit"), (1, "zinsertr"), (-1, "zinsaufw"), (-1, "steuern")], "end"),
 ]
 GUV_ANNAHMEN = [
-    "Gliederung nach § 275 Abs. 3 HGB. Die Kosten sind nach Funktionsbereichen geordnet und nicht nach Kostenarten.",
+    "Gliederung nach § 275 Abs. 3 HGB. Die Kosten sind nach Funktionsbereichen geordnet und nicht nach Kostenarten. Die sonstigen "
+    "Steuern (Kraftfahrzeugsteuer 4510) stehen über dem Betriebsergebnis. Ohne neutrale Erträge und Aufwendungen entspricht das "
+    "Betriebsergebnis damit dem Betriebsergebnis der BWA.",
     "Umsatzerlöse enthalten die gewährten Skonti (8736) als Minderung und die Schrotterlöse (8520), die nach dem Bilanzrichtlinie-"
-    "Umsetzungsgesetz zu den Umsatzerlösen zählen.",
-    "Herstellungskosten: Material, Fremdleistungen, Hilfs- und Betriebsstoffe, Fertigungslöhne mit anteiligem Sozialaufwand, Gebäude- und "
-    "Energiekosten, Maschinenkosten, Arbeitskleidung und Entsorgung. Gebäude und Energie stehen vollständig hier, weil der Standort "
-    "überwiegend Fertigung ist.",
-    "Vertriebskosten: Verpackung, Ausgangsfrachten, Werbung, Reisekosten und Fahrzeugkosten. Die Fahrzeugkosten stehen vollständig hier, "
-    "eine Trennung nach Nutzern ist aus der Buchführung nicht möglich.",
-    "Allgemeine Verwaltungskosten: Gehälter mit anteiligem Sozialaufwand und übrige Personalkosten, EDV, Beratung, Buchführung, Versicherungen "
-    "und Büro. Gehälter der Fertigungsleitung, der Arbeitsvorbereitung und des Vertriebs sind ohne Kostenstellen nicht abtrennbar. "
-    "Die Verwaltungskosten sind dadurch zu hoch und die Herstellungs- und Vertriebskosten zu niedrig ausgewiesen.",
-    "Der gesetzliche Sozialaufwand (4130) wird je Monat im Verhältnis der Löhne zu den Gehältern geteilt.",
+    "Umsetzungsgesetz zu den Umsatzerlösen zählen. Die Prozentwerte beziehen sich wie in BWA und Deckungsbeitragsrechnung auf den "
+    "Nettoumsatz (Umsatzerlöse ohne Schrotterlöse, nach gewährten Skonti).",
+    "Herstellungskosten: Material, Fremdfertigung, Leiharbeit, Hilfs- und Betriebsstoffe, Entsorgung, Fertigungslöhne mit anteiligem "
+    "Sozialaufwand, Arbeitskleidung, Gebäude- und Energiekosten, Maschinenkosten und der Herstellungsanteil der Gehälter. Gebäude und "
+    "Energie stehen vollständig hier, weil der Standort überwiegend Fertigung ist.",
+    "Vertriebskosten: Verpackung, Ausgangsfrachten, Werbung, Reisekosten, Fahrzeugkosten und der Vertriebsanteil der Gehälter. Die "
+    "Fahrzeugkosten stehen vollständig hier, eine Trennung nach Nutzern ist aus der Buchführung nicht möglich.",
+    "Allgemeine Verwaltungskosten: Verwaltungsanteil der Gehälter, EDV, Beratung, Buchführung, Versicherungen und Büro.",
+    SCHLUESSEL_TEXT,
+    SACHBEZUG_TEXT,
+    "Der gesetzliche Sozialaufwand (4130) wird je Monat im Verhältnis der Löhne zu den Gehältern geteilt. Der Lohnanteil steht in den "
+    "Herstellungskosten, der Gehaltsanteil wird nach dem Gehaltsschlüssel geteilt.",
     "Es sind keine Bestandsveränderungen gebucht. Die Herstellungskosten sind die Kosten des Monats und nicht die Kosten der im Monat "
     "abgerechneten Leistungen. Ein Umsatzkostenverfahren im strengen Sinn setzt die Bewertung der unfertigen und fertigen Erzeugnisse voraus.",
-    "Die Kraftfahrzeugsteuer (4510) steht unter Sonstige Steuern. Das Betriebsergebnis weicht deshalb um diesen Betrag vom Betriebsergebnis der BWA ab.",
 ]
+DB_GETEILT = {SOZIAL_GETEILT: [("lohn", "lohn"), ("fgehalt", "gehalt*s_hk"), ("gehalt", "gehalt*s_vv")]}
+DB_GETEILT.update({k: [("fgehalt", "s_hk"), ("gehalt", "s_vv")] for k in SCHLUESSEL_KONTEN})
+GUV_GETEILT = {SOZIAL_GETEILT: [("hk", "lohn+gehalt*s_hk"), ("vertrieb", "gehalt*s_vt"), ("verwaltung", "gehalt*s_vw")]}
+GUV_GETEILT.update({k: [("hk", "s_hk"), ("vertrieb", "s_vt"), ("verwaltung", "s_vw")] for k in SCHLUESSEL_KONTEN})
+# Bezugsgroesse der Prozentwerte: ("s", Zwischensumme der Sicht), ("p", Zeile der Sicht) oder ("b", Zeile der BWA)
 SICHTEN = [
-    ("db", "Deckungsbeitragsrechnung", DB_POS, DB_BWA, DB_AUFBAU, DB_ANNAHMEN, ("s", "netto"), "vom Nettoumsatz",
-     {SOZIAL_GETEILT: [("lohn", "lohn"), ("gehalt", "gehalt")]}),
-    ("guv", "GuV nach dem Umsatzkostenverfahren", GUV_POS, GUV_BWA, GUV_AUFBAU, GUV_ANNAHMEN, ("p", "umsatz"), "der Umsatzerlöse",
-     {SOZIAL_GETEILT: [("hk", "lohn"), ("verwaltung", "gehalt")]}),
+    ("db", "Deckungsbeitragsrechnung", DB_POS, DB_BWA, DB_AUFBAU, DB_ANNAHMEN, ("s", "netto"), "am Nettoumsatz", DB_GETEILT),
+    ("guv", "GuV nach dem Umsatzkostenverfahren", GUV_POS, GUV_BWA, GUV_AUFBAU, GUV_ANNAHMEN, ("b", "umsatz"), "am Nettoumsatz",
+     GUV_GETEILT),
 ]
+
+
+def schluessel(jahr, monate):
+    """Gehaltsschluessel je Monat: Anteile hk, vt, vw und vv (Vertrieb und Verwaltung). Ohne Eintrag gilt der letzte davor."""
+    eintraege = sorted(GEHALT_SCHLUESSEL.items())
+    out = {}
+    for m in monate:
+        vorher = [w for (j, mm), w in eintraege if (j, mm) <= (jahr, m)]
+        hk, vt = (vorher[-1] if vorher else eintraege[0][1])
+        hk, vt = hk / 100.0, vt / 100.0
+        out[str(m)] = {"hk": hk, "vt": vt, "vw": 1 - hk - vt, "vv": 1 - hk}
+    return out
+
+
+def faktor(art, m, lohnanteil, schl):
+    """Anteil eines aufgeteilten Kontos fuer eine Zeile im Monat m (gleiche Rechnung wie in der Seite)."""
+    def f1(f):
+        if f == "lohn":
+            return lohnanteil.get(str(m), 0.0)
+        if f == "gehalt":
+            return 1 - lohnanteil.get(str(m), 0.0)
+        if f.startswith("s_"):
+            return (schl.get(str(m)) or {}).get(f[2:], 0.0)
+        return 1.0
+    tot = 0.0
+    for t in str(art).split("+"):
+        x = 1.0
+        for f in t.split("*"):
+            x *= f1(f)
+        tot += x
+    return tot
+
+
+def sicht_werte(d, sicht, m):
+    """Zeilen und Zwischensummen einer Sicht im Monat m aus den Daten der Seite (Ertraege und Kosten positiv)."""
+    V = next(v for v in d["sichten"] if v["k"] == sicht)
+    schl = d.get("schluessel") or {}
+    p = {k: 0.0 for k in V["pos"]}
+    for k in d["konten"]:
+        v = k["s"].get(str(m), k["s"].get(m, 0.0))
+        for z in V["zu"].get(str(k["nr"]), []):
+            p[z[0]] += v * (-1 if V["pos"][z[0]]["art"] == "e" else 1) * faktor(z[1], m, d["lohnanteil"], schl)
+    s = {}
+    for a in V["aufbau"]:
+        if a[0] == "sum":
+            s[a[1]] = sum(t[0] * (p[t[1]] if t[1] in p else s[t[1]]) for t in a[4])
+    return p, s
+
+
+def pruefe_sichten(d):
+    """Kontrolle: aufgeteilte Konten je Monat zu 100 % verteilt und Ergebnis jeder Sicht = Ergebnis der BWA. Liefert Fehlertexte."""
+    fehler = []
+    schl = d.get("schluessel") or {}
+    for V in d["sichten"]:
+        for nr, zs in V["zu"].items():
+            for m in d["meta"]["monate"]:
+                f = sum(faktor(z[1], m, d["lohnanteil"], schl) for z in zs)
+                if abs(f - 1) > 1e-9:
+                    fehler.append("Sicht %s, Konto %s, Monat %s: Anteile zusammen %.4f statt 1" % (V["k"], nr, m, f))
+        for m in d["meta"]["monate"]:
+            _, s = sicht_werte(d, V["k"], m)
+            bwa = d["pruef"][str(m)]["ergebnis"]
+            if abs(s["ergebnis"] - bwa) > 0.01:
+                fehler.append("Sicht %s, Monat %s: Ergebnis %.2f, BWA %.2f" % (V["k"], m, s["ergebnis"], bwa))
+    return fehler
 
 
 def sichten(konten):
@@ -584,6 +704,7 @@ def bauen(dateien, heute):
         "meta": {"stand": jetzt().strftime("%Y-%m-%dT%H:%M"),
                  "heute": heute.isoformat(), "jahr": jahr, "monate": monate, "start": START_MONAT if jahr == START_JAHR else 1,
                  "mandant": "FEG Metalltechnik GmbH", "mandantnr": 4089, "bagatelle": BAGATELLE,
+                 "schluessel_stand": GEHALT_SCHLUESSEL_STAND,
                  "quelle": "DATEV-Konnektor: Summen und Salden und Kontobuchungen, Wirtschaftsjahr %d" % jahr},
         "aufbau": [list(a) for a in AUFBAU],
         "pos": [{"k": p[0], "n": p[1], "art": p[2], "ber": p[3], "belegt": BELEGT.get(p[0], [])} for p in POS],
@@ -594,6 +715,7 @@ def bauen(dateien, heute):
         "struktur": struktur,
         "sichten": sichten(konten),
         "lohnanteil": lohnanteil,
+        "schluessel": schluessel(jahr, monate),
         "verr": vk,
         "kontrolle": {"abweichungen": abw, "buchungen": sum(len(v) for v in buch.values()), "konten": len(konten),
                       "abrufe": len(abrufe)},
@@ -636,6 +758,13 @@ def main():
                 x["nr"], x["m"], x["buch"], x["susa"], x["diff"]))
     else:
         print("Kontrolle: Buchungen je Konto und Monat = Summen und Salden, keine Abweichung")
+    fs = pruefe_sichten(d)
+    if fs:
+        print("WARNUNG: Deckungsbeitragsrechnung oder GuV weichen ab:")
+        for t in fs[:30]:
+            print("   " + t)
+    else:
+        print("Kontrolle Sichten: jedes Konto vollständig zugeordnet, Ergebnis in Deckungsbeitragsrechnung und GuV je Monat = BWA")
     for m in d["meta"]["monate"]:
         p = d["pruef"][str(m)]
         print("Monat %02d: Ergebnis %.2f | wahrscheinlich fehlend Kosten %.2f, Erlöse %.2f | %d Positionen%s" % (

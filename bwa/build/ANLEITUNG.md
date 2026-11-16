@@ -32,9 +32,30 @@ In diesem Ordner liegen nur Skripte und die Vorlage. Hier stehen keine Daten, ke
 
 ## Deckungsbeitragsrechnung und GuV nach dem Umsatzkostenverfahren
 
-- Beide Sichten nutzen dieselben Konten und Buchungen wie die BWA. Die Zuordnung steht in `bwa_daten.py` (`DB_POS`, `GUV_POS`).
-  Jedes Erfolgskonto steht in jeder Sicht in genau einer Zeile, das Ergebnis muss je Monat mit der BWA übereinstimmen
-  (die Seite prüft das und meldet Abweichungen).
+- Beide Sichten nutzen dieselben Konten und Buchungen wie die BWA. Die Zuordnung steht in `bwa_daten.py` (`DB_POS`, `GUV_POS`,
+  aufgeteilte Konten in `DB_GETEILT`, `GUV_GETEILT`). Jedes Erfolgskonto steht in jeder Sicht in genau einer Zeile, ausgenommen die
+  aufgeteilten Konten, deren Anteile je Monat zusammen 100 % ergeben.
+- Kontrolle: `bwa_daten.py bauen` meldet „Kontrolle Sichten: jedes Konto vollständig zugeordnet, Ergebnis in Deckungsbeitragsrechnung
+  und GuV je Monat = BWA“. Bei einer Abweichung baut `bwa_build.py` die Seite nicht und meldet FEHLER. Dann nicht veröffentlichen.
+- Deckungsbeitragsrechnung: Deckungsbeitrag I nach variablen Kosten (Material, Fremdfertigung 3100 und 3102, Hilfs- und Betriebsstoffe
+  und Entsorgung 4969, Verpackung und Ausgangsfrachten), Deckungsbeitrag II nach Fertigungspersonal (Fertigungslöhne der
+  Stammbelegschaft mit Sozialaufwand und Arbeitskleidung 4400, Leiharbeit 4909) mit der Kennzahl Leiharbeitsquote, Deckungsbeitrag III
+  nach Fertigungsgemeinkosten (Gehälter der Fertigungsbereiche, Gebäude, Energie und Maschinen, Abschreibungen). Deckungsbeitrag III
+  zuzüglich Verpackung und Ausgangsfrachten ergibt das Bruttoergebnis vom Umsatz der GuV.
+- GuV: Die sonstigen Steuern (Kraftfahrzeugsteuer 4510) stehen über dem Betriebsergebnis (EBIT). Ohne neutrale Posten ist das EBIT
+  gleich dem Betriebsergebnis der BWA.
+- Verrechnete Sachbezüge (8595, 8610, 8611, 8613) kommen aus der Lohnabrechnung und mindern die Gehälter.
 - Konto 4130 (gesetzlicher Sozialaufwand) wird je Monat im Verhältnis Löhne (4110, 4190, 4195) zu Gehältern (4100, 4120) geteilt.
+- Gehaltsschlüssel: Gehälter (4100, 4120), der Gehaltsanteil von 4130, die übrigen Personalkosten (4140 bis 4175, 4945, 4946) und die
+  verrechneten Sachbezüge werden je Monat auf Herstellung, Vertrieb und Verwaltung geteilt (`GEHALT_SCHLUESSEL`, `SCHLUESSEL_KONTEN`).
+  Der Schlüssel ist der Anteil der Gehälter je Funktionsbereich laut Lohnabrechnung des Monats (Gehaltsliste der FEG, Blatt
+  Abrechnungen, Gehaltsempfänger und Geschäftsführung ohne Auszubildende). Herstellung: Arbeitsvorbereitung, Meister der Hallen,
+  Einkauf, Instandhaltung, Logistik. Vertrieb: Vertrieb, Lkw-Fahrer. Verwaltung: Geschäftsführung, Buchhaltung und Personal.
+  Ein Monat ohne Eintrag nutzt den letzten Eintrag davor. Pflege quartalsweise und bei Ein- und Austritten von Angestellten:
+  neue Zeile `(Jahr, Monat): (Prozent Herstellung, Prozent Vertrieb)` ergänzen und `GEHALT_SCHLUESSEL_STAND` anpassen. Im Repository
+  stehen nur Prozentsätze, keine Namen, Personalnummern oder Gehälter.
+- Prozentwerte: In BWA, Deckungsbeitragsrechnung und GuV beziehen sich alle Prozentwerte auf den Nettoumsatz (Umsatzerlöse nach
+  gewährten Skonti, ohne Schrotterlöse).
+- `bwa_diff.py` nennt zusätzlich die Veränderung der Zwischensummen von Deckungsbeitragsrechnung und GuV je Monat.
 - Neue Konten fallen über ihre BWA-Zeile in eine Zeile der Sicht (`DB_BWA`, `GUV_BWA`) und werden als „Zuordnung nicht geprüft“
   gekennzeichnet.
